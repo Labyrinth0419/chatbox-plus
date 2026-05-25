@@ -76,17 +76,13 @@ const BUILTIN_API_HOST_PROVIDERS = new Set<string>([
   ModelProviderEnum.OpenAIResponses,
   ModelProviderEnum.Claude,
   ModelProviderEnum.Gemini,
-  ModelProviderEnum.Qwen,
-  ModelProviderEnum.QwenPortal,
-  ModelProviderEnum.MiniMax,
-  ModelProviderEnum.MiniMaxCN,
   ModelProviderEnum.Moonshot,
   ModelProviderEnum.MoonshotCN,
   ModelProviderEnum.Ollama,
   ModelProviderEnum.LMStudio,
 ])
 
-const OAUTH_ONLY_PROVIDERS = new Set<string>([ModelProviderEnum.QwenPortal])
+const OAUTH_ONLY_PROVIDERS = new Set<string>([])
 
 const OAUTH_PROVIDER_FALLBACKS: Record<string, OAuthProviderInfo> = {
   claude: {
@@ -99,25 +95,10 @@ const OAUTH_PROVIDER_FALLBACKS: Record<string, OAuthProviderInfo> = {
     name: 'GitHub Copilot',
     flowType: 'device-code',
   },
-  minimax: {
-    providerId: 'minimax',
-    name: 'MiniMax',
-    flowType: 'device-code',
-  },
-  'minimax-cn': {
-    providerId: 'minimax-cn',
-    name: 'MiniMax CN',
-    flowType: 'device-code',
-  },
   openai: {
     providerId: 'openai',
     name: 'OpenAI',
     flowType: 'callback',
-  },
-  'qwen-portal': {
-    providerId: 'qwen-portal',
-    name: 'Qwen Portal',
-    flowType: 'device-code',
   },
 }
 
@@ -165,7 +146,7 @@ function ProviderSettings({ providerId }: { providerId: string }) {
   const oauthSettingsProviderId = toOAuthSettingsProviderId(providerId) || providerId
 
   // OAuth
-  const oauthProviders = useOAuthProviders()
+  const { oauthProviders } = useOAuthProviders()
   const oauthProviderInfo = oauthProviderId
     ? oauthProviders.find((p) => p.providerId === oauthProviderId) || OAUTH_PROVIDER_FALLBACKS[oauthProviderId]
     : undefined
@@ -285,6 +266,7 @@ function ProviderSettings({ providerId }: { providerId: string }) {
     providerId as ModelProviderEnum
   )
   const isOAuthOnlyProvider = baseInfo?.id ? OAUTH_ONLY_PROVIDERS.has(baseInfo.id) : false
+  const supportsNetworkCompatibility = !!baseInfo?.id
   const providerWebsite = baseInfo?.urls?.website || ''
 
   const handleApiKeyChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -640,9 +622,7 @@ function ProviderSettings({ providerId }: { providerId: string }) {
 
         {/* API Key */}
         {!isOAuthOnlyProvider &&
-          ![ModelProviderEnum.Ollama, ModelProviderEnum.LMStudio, ModelProviderEnum.Bedrock, ''].includes(
-            baseInfo.id
-          ) && (
+          ![ModelProviderEnum.Ollama, ModelProviderEnum.LMStudio, ''].includes(baseInfo.id) && (
             <Stack gap="xxs" style={isOAuthActive ? { opacity: 0.5 } : undefined}>
               <Flex gap="xs" align="center">
                 <Text span fw="600">
@@ -759,21 +739,10 @@ function ProviderSettings({ providerId }: { providerId: string }) {
                 </Flex>
               )}
             </Stack>
-
-            <Switch
-              label={t('Improve Network Compatibility')}
-              checked={providerSettings?.useProxy || false}
-              onChange={(e) =>
-                setProviderSettings({
-                  useProxy: e.currentTarget.checked,
-                })
-              }
-            />
           </>
         )}
 
-        {/* useProxy for Ollama */}
-        {baseInfo.id === ModelProviderEnum.Ollama && (
+        {supportsNetworkCompatibility && (
           <Switch
             label={t('Improve Network Compatibility')}
             checked={providerSettings?.useProxy || false}
@@ -831,89 +800,6 @@ function ProviderSettings({ providerId }: { providerId: string }) {
                 />
               </Flex>
             </Stack>
-          </>
-        )}
-
-        {/* AWS Bedrock Credentials */}
-        {baseInfo.id === ModelProviderEnum.Bedrock && (
-          <>
-            <Stack gap="xxs">
-              <Text span fw="600">
-                {t('AWS Access Key ID')}
-              </Text>
-              <PasswordInput
-                flex={1}
-                value={providerSettings?.accessKey || ''}
-                placeholder="AKIAIOSFODNN7EXAMPLE"
-                onChange={(e) =>
-                  setProviderSettings({
-                    accessKey: e.currentTarget.value,
-                  })
-                }
-              />
-            </Stack>
-
-            <Stack gap="xxs">
-              <Text span fw="600">
-                {t('AWS Secret Access Key')}
-              </Text>
-              <PasswordInput
-                flex={1}
-                value={providerSettings?.secretKey || ''}
-                placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-                onChange={(e) =>
-                  setProviderSettings({
-                    secretKey: e.currentTarget.value,
-                  })
-                }
-              />
-            </Stack>
-
-            <Stack gap="xxs">
-              <Text span fw="600">
-                {t('AWS Region')}
-              </Text>
-              <TextInput
-                flex={1}
-                value={providerSettings?.region || ''}
-                placeholder="us-east-1"
-                onChange={(e) =>
-                  setProviderSettings({
-                    region: e.currentTarget.value,
-                  })
-                }
-              />
-            </Stack>
-
-            <Flex gap="xs" align="center">
-              <Tooltip
-                disabled={
-                  !!providerSettings?.accessKey &&
-                  !!providerSettings?.secretKey &&
-                  displayModels.length > 0
-                }
-                label={
-                  !providerSettings?.accessKey || !providerSettings?.secretKey
-                    ? t('AWS Access Key ID and Secret Access Key are required to check connection')
-                    : displayModels.length === 0
-                      ? t('Add at least one model to check connection')
-                      : null
-                }
-              >
-                <Button
-                  size="sm"
-                  disabled={
-                    !providerSettings?.accessKey ||
-                    !providerSettings?.secretKey ||
-                    displayModels.length === 0
-                  }
-                  loading={modelTestResult?.testing || false}
-                  onClick={() => setShowTestModelSelector(true)}
-                >
-                  {t('Check')}
-                </Button>
-              </Tooltip>
-            </Flex>
           </>
         )}
 

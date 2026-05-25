@@ -71,7 +71,7 @@ export const ProviderSettingsSchema = z.object({
   dalleDeploymentName: z.string().optional().catch(undefined),
   apiVersion: z.string().optional().catch(undefined),
 
-  // credentials (e.g. AWS Bedrock)
+  // credentials for providers that require key pairs
   accessKey: z.string().optional().catch(undefined),
   secretKey: z.string().optional().catch(undefined),
   sessionToken: z.string().optional().catch(undefined),

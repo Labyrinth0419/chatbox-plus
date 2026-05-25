@@ -12,10 +12,6 @@ export const aiProviderNameHash: Record<ModelProviderEnum, string> = {
   [ModelProviderEnum.ChatboxAI]: 'Unavailable Provider',
   [ModelProviderEnum.Claude]: 'Claude API',
   [ModelProviderEnum.Gemini]: 'Google Gemini API',
-  [ModelProviderEnum.Qwen]: 'Qwen API',
-  [ModelProviderEnum.QwenPortal]: 'Qwen Portal API',
-  [ModelProviderEnum.MiniMax]: 'MiniMax API',
-  [ModelProviderEnum.MiniMaxCN]: 'MiniMax CN API',
   [ModelProviderEnum.Moonshot]: 'Moonshot API',
   [ModelProviderEnum.MoonshotCN]: 'Moonshot CN API',
   [ModelProviderEnum.Ollama]: 'Ollama API',
@@ -28,7 +24,6 @@ export const aiProviderNameHash: Record<ModelProviderEnum, string> = {
   [ModelProviderEnum.Perplexity]: 'Perplexity API',
   [ModelProviderEnum.XAI]: 'xAI API',
   [ModelProviderEnum.OpenRouter]: 'OpenRouter API',
-  [ModelProviderEnum.Bedrock]: 'AWS Bedrock',
   [ModelProviderEnum.Custom]: 'Custom Provider',
 }
 
@@ -101,11 +96,6 @@ export const AIModelProviderMenuOptionList = [
   {
     value: ModelProviderEnum.Groq,
     label: aiProviderNameHash[ModelProviderEnum.Groq],
-    disabled: false,
-  },
-  {
-    value: ModelProviderEnum.Bedrock,
-    label: aiProviderNameHash[ModelProviderEnum.Bedrock],
     disabled: false,
   },
   {

@@ -17,14 +17,10 @@ export const PROVIDER_ID_MAP: Record<string, string> = {
   'mistral-ai': 'mistral',
   perplexity: 'perplexity',
   openrouter: 'openrouter',
-  minimax: 'minimax',
-  'minimax-cn': 'minimax-cn',
   moonshot: 'moonshotai',
   'moonshot-cn': 'moonshotai',
   siliconflow: 'siliconflow',
   'chatglm-6b': 'zhipuai',
-  qwen: 'alibaba',
-  'qwen-portal': 'alibaba',
 }
 
 /** Reverse mapping: models.dev provider ID -> Chatbox provider IDs */

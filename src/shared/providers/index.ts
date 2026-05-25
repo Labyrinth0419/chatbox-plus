@@ -11,9 +11,6 @@ import './definitions/openai-responses'
 import './definitions/gemini'
 import './definitions/claude'
 import './definitions/deepseek'
-import './definitions/qwen'
-import './definitions/qwen-portal'
-import './definitions/minimax'
 import './definitions/moonshot'
 import './definitions/siliconflow'
 import './definitions/openrouter'
@@ -26,8 +23,6 @@ import './definitions/mistral-ai'
 import './definitions/perplexity'
 import './definitions/volcengine'
 import './definitions/chatglm'
-import './definitions/github-copilot'
-import './definitions/bedrock'
 import {
   clearProviderRegistry,
   defineProvider,

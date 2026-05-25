@@ -26,11 +26,7 @@ export const useProviders = () => {
           }
           if (
             (!p.isCustom &&
-              (providerSettings?.apiKey ||
-                isUsingOAuth(providerSettings || {}, platform.type) ||
-                (p.id === ModelProviderEnum.Bedrock &&
-                  providerSettings?.accessKey &&
-                  providerSettings?.secretKey))) ||
+              (providerSettings?.apiKey || isUsingOAuth(providerSettings || {}, platform.type))) ||
             ((p.isCustom || p.id === ModelProviderEnum.Ollama || p.id === ModelProviderEnum.LMStudio) &&
               providerSettings?.models?.length)
           ) {

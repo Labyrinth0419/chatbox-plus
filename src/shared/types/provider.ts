@@ -9,10 +9,6 @@ export enum ModelProviderEnum {
   ChatGLM6B = 'chatglm-6b',
   Claude = 'claude',
   Gemini = 'gemini',
-  Qwen = 'qwen',
-  QwenPortal = 'qwen-portal',
-  MiniMax = 'minimax',
-  MiniMaxCN = 'minimax-cn',
   Moonshot = 'moonshot',
   MoonshotCN = 'moonshot-cn',
   Ollama = 'ollama',
@@ -25,7 +21,6 @@ export enum ModelProviderEnum {
   Perplexity = 'perplexity',
   XAI = 'xAI',
   OpenRouter = 'openrouter',
-  Bedrock = 'bedrock',
   Custom = 'custom',
 }
 
