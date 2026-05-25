@@ -25,7 +25,6 @@ import { useIsSmallScreen, useSidebarWidth } from './hooks/useScreenChange'
 import useVersion from './hooks/useVersion'
 import { navigateToSettings } from './modals/Settings'
 import { trackingEvent } from './packages/event'
-import platform from './platform'
 import { featureFlags } from './utils/feature-flags'
 import icon from './static/icon.png'
 import { settingsStore, useLanguage } from './stores/settingsStore'
@@ -156,8 +155,6 @@ export default function Sidebar() {
             <Flex
               align="center"
               gap="sm"
-              onClick={() => platform.openLink('https://chatboxai.app/')}
-              style={{ cursor: 'pointer' }}
             >
               <Image src={icon} w={20} h={20} />
               <Text span c="chatbox-secondary" size="xl" lh={1.2} fw="700">

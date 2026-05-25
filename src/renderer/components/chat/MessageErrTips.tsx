@@ -1,25 +1,17 @@
-import { ActionIcon, Flex, Loader, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Flex, Text, Tooltip } from '@mantine/core'
 import { Link } from '@mui/material'
 import { aiProviderNameHash } from '@shared/models'
 import { ChatboxAIAPIError } from '@shared/models/errors'
 import type { Message } from '@shared/types'
 import { ModelProviderEnum } from '@shared/types/provider'
-import { IconCheck, IconChevronDown, IconChevronUp, IconCopy, IconLanguage, IconReload } from '@tabler/icons-react'
+import { IconCheck, IconChevronDown, IconChevronUp, IconCopy, IconReload } from '@tabler/icons-react'
 import type React from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { trackJkClickEvent } from '@/analytics/jk'
-import { JK_EVENTS, JK_PAGE_NAMES } from '@/analytics/jk-events'
 import { ChatboxAIErrorMessage } from '@/components/common/ChatboxAIErrorMessage'
 import { useCopied } from '@/hooks/useCopied'
 import { navigateToSettings } from '@/modals/Settings'
-import { trackingEvent } from '@/packages/event'
-import { buildChatboxUrl } from '@/packages/remote'
-import { translateTexts } from '@/packages/translation'
-import platform from '@/platform'
 import * as settingActions from '@/stores/settingActions'
-import { useLanguage, useSettingsStore } from '@/stores/settingsStore'
-import LinkTargetBlank from '../common/Link'
 
 const MAX_CHARS = 200
 const MAX_LINES = 3
@@ -52,7 +44,7 @@ const httpStatusCodeI18nKeys: Record<number, string> = {
  */
 function getHttpStatusCode(msg: Message): number | undefined {
   // First check errorExtra.httpStatusCode (set by our request layer)
-  const extraCode = msg.errorExtra?.['httpStatusCode']
+  const extraCode = msg.errorExtra?.httpStatusCode
   if (typeof extraCode === 'number' && extraCode >= 400) {
     return extraCode
   }
@@ -99,24 +91,13 @@ export function isContextLengthError(errorText: string | null | undefined): bool
 }
 
 function ErrorActionButtons(props: {
-  showTranslateButton: boolean
-  translatedText: string | null
-  isTranslating: boolean
   copied: boolean
-  onTranslate: (e: React.MouseEvent) => void
   onCopy: (e: React.MouseEvent) => void
   t: (key: string) => string
 }) {
-  const { showTranslateButton, translatedText, isTranslating, copied, onTranslate, onCopy, t } = props
+  const { copied, onCopy, t } = props
   return (
     <Flex justify="flex-end" mt="xs" gap={4}>
-      {showTranslateButton && (
-        <Tooltip label={translatedText ? t('Show original') : t('Translate')} withArrow openDelay={1000}>
-          <ActionIcon variant="subtle" size="sm" color="red" disabled={isTranslating} onClick={onTranslate}>
-            {isTranslating ? <Loader size={14} color="red" /> : <IconLanguage size={14} />}
-          </ActionIcon>
-        </Tooltip>
-      )}
       <Tooltip label={t('Copy')} withArrow openDelay={1000}>
         <ActionIcon variant="subtle" size="sm" color="red" onClick={onCopy}>
           {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
@@ -130,10 +111,6 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
   const { msg, onRetry, isBubbleLayout } = props
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
-  const licenseKey = useSettingsStore((state) => state.licenseKey)
-  const language = useLanguage()
-  const [translatedText, setTranslatedText] = useState<string | null>(null)
-  const [isTranslating, setIsTranslating] = useState(false)
 
   const errorMessage = msg.errorExtra?.responseBody
     ? (() => {
@@ -153,29 +130,11 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
 
   // Reset translation when the underlying error changes (e.g. after retry)
   useEffect(() => {
-    setTranslatedText(null)
+    setExpanded(false)
   }, [errorMessage])
 
-  const displayedErrorMessage = translatedText ?? errorMessage
-  const { copied, copy } = useCopied(displayedErrorMessage)
+  const { copied, copy } = useCopied(errorMessage)
   const isTruncated = shouldTruncate(errorMessage)
-  const showTranslateButton = language !== 'en' && errorMessage.length > 0
-
-  const handleTranslate = useCallback(async () => {
-    if (translatedText) {
-      setTranslatedText(null)
-      return
-    }
-    setIsTranslating(true)
-    try {
-      const [result] = await translateTexts([errorMessage], language, { sourceLang: 'en' })
-      setTranslatedText(result ?? null)
-    } catch {
-      // ignore
-    } finally {
-      setIsTranslating(false)
-    }
-  }, [errorMessage, language, translatedText])
 
   if (!msg.error) {
     return null
@@ -193,7 +152,7 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
       <Trans
         i18nKey="OCR processing failed (provider: {{aiProvider}}). Please check your <OpenSettingButton>OCR model settings</OpenSettingButton> and ensure the configured model is available."
         values={{
-          aiProvider: msg.errorExtra?.['aiProvider'] || 'AI Provider',
+          aiProvider: msg.errorExtra?.aiProvider || 'AI Provider',
         }}
         components={{
           OpenSettingButton: (
@@ -234,7 +193,7 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
               <a
                 className="cursor-pointer underline font-bold hover:text-blue-600 transition-colors"
                 onClick={() => {
-                  navigateToSettings(`/provider/${ModelProviderEnum.ChatboxAI}`)
+                  navigateToSettings('/provider')
                 }}
               />
             ),
@@ -244,7 +203,7 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
     } else {
       tips.push(
         <Trans
-          i18nKey="Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status, or purchase a <LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing> to unlock all advanced models instantly without any configuration."
+          i18nKey="Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status."
           values={{
             aiProvider: msg.aiProvider
               ? aiProviderNameHash[msg.aiProvider as keyof typeof aiProviderNameHash]
@@ -259,15 +218,6 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
                 }}
               />
             ),
-            LinkToLicensePricing: (
-              <LinkTargetBlank
-                className="!font-bold !text-gray-700 hover:!text-blue-600 transition-colors"
-                href={buildChatboxUrl(
-                  `/redirect_app/advanced_url_processing/${settingActions.getLanguage()}?utm_source=app&utm_content=msg_bad_provider`
-                )}
-              />
-            ),
-            a: <a href={buildChatboxUrl(`/redirect_app/faqs/${settingActions.getLanguage()}`)} target="_blank" />,
           }}
         />
       )
@@ -277,7 +227,7 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
       <Trans
         i18nKey="network error tips"
         values={{
-          host: msg.errorExtra?.['host'] || 'AI Provider',
+          host: msg.errorExtra?.host || 'AI Provider',
         }}
       />
     )
@@ -309,20 +259,7 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
     onlyShowTips = true
     tips.push(<ChatboxAIErrorMessage errorCode={msg.errorCode} model={msg.model} />)
   } else {
-    tips.push(
-      <Trans
-        i18nKey="unknown error tips"
-        components={[
-          <a
-            key="a"
-            href={buildChatboxUrl(
-              `/redirect_app/faqs/${settingActions.getLanguage()}?utm_source=app&utm_content=msg_error_unknown`
-            )}
-            target="_blank"
-          ></a>,
-        ]}
-      />
-    )
+    tips.push(<Trans i18nKey="unknown error tips" components={[<span key="a" />]} />)
   }
   return (
     <div
@@ -363,19 +300,11 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
                   {expanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
                 </ActionIcon>
                 <div className="flex-1 min-w-0 whitespace-pre-wrap break-all">
-                  {expanded ? displayedErrorMessage : getTruncatedText(displayedErrorMessage)}
+                  {expanded ? errorMessage : getTruncatedText(errorMessage)}
                 </div>
               </Flex>
               <ErrorActionButtons
-                showTranslateButton={showTranslateButton}
-                translatedText={translatedText}
-                isTranslating={isTranslating}
                 copied={copied}
-                onTranslate={(e) => {
-                  e.stopPropagation()
-                  if (!expanded) setExpanded(true)
-                  handleTranslate()
-                }}
                 onCopy={(e) => {
                   e.stopPropagation()
                   copy()
@@ -385,52 +314,11 @@ export default function MessageErrTips(props: { msg: Message; onRetry?: () => vo
             </div>
           ) : (
             <div className="text-sm p-2 rounded-md bg-red-50 dark:bg-red-900/20 overflow-hidden">
-              <div className="whitespace-pre-wrap break-all">{displayedErrorMessage}</div>
-              <ErrorActionButtons
-                showTranslateButton={showTranslateButton}
-                translatedText={translatedText}
-                isTranslating={isTranslating}
-                copied={copied}
-                onTranslate={handleTranslate}
-                onCopy={copy}
-                t={t}
-              />
+              <div className="whitespace-pre-wrap break-all">{errorMessage}</div>
+              <ErrorActionButtons copied={copied} onCopy={copy} t={t} />
             </div>
           )}
         </>
-      )}
-      {/* Free trial suggestion for users without license (skip for ChatboxAI errors) */}
-      {!licenseKey && msg.aiProvider !== ModelProviderEnum.ChatboxAI && (
-        <div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800/30 text-right">
-          <Tooltip
-            label={t(
-              'If you have never had a license before, you can claim it after logging in on the official website.'
-            )}
-            withArrow
-            multiline
-            maw={240}
-            position="bottom-end"
-            styles={{
-              tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                backdropFilter: 'blur(4px)',
-              },
-            }}
-          >
-            <span
-              className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-700 hover:underline transition-colors"
-              onClick={() => {
-                trackJkClickEvent(JK_EVENTS.FREE_LICENSE_CLAIM_CLICK, {
-                  pageName: JK_PAGE_NAMES.CHAT_PAGE,
-                  content: 'chat_error',
-                })
-                platform.openLink('https://chatboxai.app/login')
-              }}
-            >
-              {t('Chatbox AI free trial available')} →
-            </span>
-          </Tooltip>
-        </div>
       )}
     </div>
   )

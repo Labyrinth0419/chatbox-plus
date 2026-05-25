@@ -9,8 +9,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
-import { trackJkClickEvent } from '@/analytics/jk'
-import { JK_EVENTS, JK_PAGE_NAMES } from '@/analytics/jk-events'
 import { MessageLayoutSelector } from '@/components/common/MessageLayoutPreview'
 import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { ImageInStorage } from '@/components/Image'
@@ -21,14 +19,11 @@ import { useMyCopilots, useRemoteCopilotsByCursor } from '@/hooks/useCopilots'
 import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { navigateToSettings } from '@/modals/Settings'
-import { openLinkWithAuth } from '@/packages/openLinkWithAuth'
-import * as remote from '@/packages/remote'
 import { router } from '@/router'
-import { useAuthInfoStore } from '@/stores/authInfoStore'
 import { createSession as createSessionStore } from '@/stores/chatStore'
 import { submitNewUserMessage, switchCurrentSession } from '@/stores/sessionActions'
 import { initEmptyChatSession } from '@/stores/sessionHelpers'
-import { useLanguage, useSettingsStore } from '@/stores/settingsStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
 import { getHomeWelcomeCardMode } from '@/utils/homeWelcomeCard'
 
@@ -62,17 +57,10 @@ function Index() {
     id: 'new',
     ...initEmptyChatSession(),
   })
-  const [pendingWelcomeAction, setPendingWelcomeAction] = useState<'claim-free-plan' | 'view-more-plans' | null>(null)
-  const pendingWelcomeActionRef = useRef(false)
 
   const { providers } = useProviders()
-  const language = useLanguage()
-  const hasLicense = useSettingsStore((s) => Boolean(s.licenseKey))
-  const isLoggedIn = useAuthInfoStore((s) => Boolean(s.accessToken && s.refreshToken))
-  const welcomeCardMode = useMemo(
-    () => getHomeWelcomeCardMode({ providerCount: providers.length, isLoggedIn, hasLicense }),
-    [providers.length, isLoggedIn, hasLicense]
-  )
+  const welcomeCardMode = useMemo(() => getHomeWelcomeCardMode({ providerCount: providers.length }), [providers.length])
+  const showWelcomeCard = welcomeCardMode !== null
 
   const selectedModel = useMemo(() => {
     if (session.settings?.provider && session.settings?.modelId) {
@@ -164,12 +152,6 @@ function Index() {
         settings: session.settings,
       })
 
-      if (session.copilotId) {
-        void remote
-          .recordCopilotUsage({ id: session.copilotId, action: 'create_session' })
-          .catch((error) => console.warn('[recordCopilotUsage] failed', error))
-      }
-
       // Transfer knowledge base from newSessionState to the actual session
       if (newSessionState.knowledgeBase) {
         addSessionKnowledgeBase(newSession.id, newSessionState.knowledgeBase)
@@ -231,7 +213,7 @@ function Index() {
   return (
     <Page title="">
       <div className="p-0 flex flex-col h-full">
-        {messageLayout || welcomeCardMode !== 'none' ? (
+        {messageLayout || showWelcomeCard ? (
           <Stack align="center" justify="center" gap="sm" flex={1}>
             <HomepageIcon className="h-8" />
             <Text fw="600" size={isSmallScreen ? 'sm' : 'md'}>
@@ -290,7 +272,7 @@ function Index() {
           </Stack>
         )}
 
-        {welcomeCardMode !== 'none' && (
+        {showWelcomeCard && (
           <Box px="sm">
             <Paper
               radius="md"
@@ -308,100 +290,22 @@ function Index() {
                   </Text>
 
                   <Text size="xs" c="chatbox-tertiary" className="text-center">
-                    {welcomeCardMode === 'no-license' ? t('No licenses found') : t('Login to start chatting with AI')}
+                    {t('Select and configure an AI model provider')}
                   </Text>
                 </Stack>
 
                 <Flex gap="xs" justify="center" align="center" wrap="wrap">
-                  {welcomeCardMode === 'no-license' ? (
-                    <>
-                      <Button
-                        size="xs"
-                        variant="filled"
-                        h={32}
-                        miw={160}
-                        fw={600}
-                        flex="0 1 auto"
-                        onClick={() => {
-                          if (pendingWelcomeActionRef.current) return
-
-                          pendingWelcomeActionRef.current = true
-                          trackJkClickEvent(JK_EVENTS.FREE_LICENSE_CLAIM_CLICK, {
-                            pageName: JK_PAGE_NAMES.CHAT_PAGE,
-                          })
-                          setPendingWelcomeAction('claim-free-plan')
-                          openLinkWithAuth(
-                            remote.buildChatboxUrl(
-                              `/redirect_app/claim_free_plan/${language}/?utm_source=app&utm_content=provider_cb_login_claim_free`
-                            )
-                          ).finally(() => {
-                            pendingWelcomeActionRef.current = false
-                            setPendingWelcomeAction(null)
-                          })
-                        }}
-                        loading={pendingWelcomeAction === 'claim-free-plan'}
-                        disabled={pendingWelcomeAction !== null}
-                      >
-                        {t('Claim Free Plan')}
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="subtle"
-                        c="chatbox-tertiary"
-                        h={32}
-                        fw={400}
-                        flex="0 1 auto"
-                        onClick={() => {
-                          if (pendingWelcomeActionRef.current) return
-
-                          pendingWelcomeActionRef.current = true
-                          setPendingWelcomeAction('view-more-plans')
-                          openLinkWithAuth(
-                            remote.buildChatboxUrl(
-                              `/redirect_app/view_more_plans/${language}/?utm_source=app&utm_content=provider_cb_login_more_plans`
-                            )
-                          ).finally(() => {
-                            pendingWelcomeActionRef.current = false
-                            setPendingWelcomeAction(null)
-                          })
-                        }}
-                        loading={pendingWelcomeAction === 'view-more-plans'}
-                        disabled={pendingWelcomeAction !== null}
-                      >
-                        {t('View More Plans')}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        size="xs"
-                        variant="filled"
-                        h={32}
-                        miw={160}
-                        fw={600}
-                        flex="0 1 auto"
-                        onClick={() => {
-                          trackJkClickEvent(JK_EVENTS.LOGIN_BUTTON_CLICK, {
-                            pageName: JK_PAGE_NAMES.CHAT_PAGE,
-                          })
-                          navigateToSettings('chatbox-ai')
-                        }}
-                      >
-                        {t('Login Chatbox AI')}
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="subtle"
-                        c="chatbox-tertiary"
-                        h={32}
-                        fw={400}
-                        flex="0 1 auto"
-                        onClick={() => navigateToSettings('provider')}
-                      >
-                        {t('Other options')}
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    size="xs"
+                    variant="filled"
+                    h={32}
+                    miw={160}
+                    fw={600}
+                    flex="0 1 auto"
+                    onClick={() => navigateToSettings('provider')}
+                  >
+                    {t('Setup Provider')}
+                  </Button>
                 </Flex>
               </Stack>
             </Paper>
