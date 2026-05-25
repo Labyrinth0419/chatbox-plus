@@ -270,10 +270,16 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
     if (!imageModel) {
       throw new ApiError('Provider doesnt support image generation')
     }
+    const prompt =
+      params.images && params.images.length > 0
+        ? {
+            text: params.prompt,
+            images: params.images.map((image) => image.imageUrl),
+          }
+        : params.prompt
     const result = await generateImage({
       model: imageModel,
-      prompt: params.prompt,
-      // images 暂时不支持
+      prompt,
       n: params.num,
       abortSignal: signal,
     })
@@ -536,7 +542,7 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
   private handleError(error: unknown, context: string = ''): never {
     if (APICallError.isInstance(error)) {
       const responseBody = this.sanitizeResponseBody(error.statusCode, error.responseBody)
-      throw new ApiError(`Error from ${this.name}${context}`, responseBody, error.statusCode)
+      throw new ApiError(`Error from ${this.name}${context}`, responseBody)
     }
     if (error instanceof ApiError) {
       throw error

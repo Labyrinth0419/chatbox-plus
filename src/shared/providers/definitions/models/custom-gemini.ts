@@ -28,6 +28,8 @@ interface Options {
   useProxy?: boolean
 }
 
+type GeminiImageAspectRatio = NonNullable<GoogleGenerativeAIProviderOptions['imageConfig']>['aspectRatio']
+
 export default class CustomGemini extends AbstractAISDKModel {
   public name = 'Custom Gemini'
 
@@ -130,6 +132,10 @@ export default class CustomGemini extends AbstractAISDKModel {
 
     const provider = this.getProvider()
     const model = provider.chat(this.options.model.modelId)
+    const messageContent: Array<{ type: 'image'; image: string } | { type: 'text'; text: string }> = [
+      ...(params.images?.map((image) => ({ type: 'image' as const, image: image.imageUrl })) ?? []),
+      { type: 'text', text: params.prompt },
+    ]
 
     const results: string[] = []
     for (let i = 0; i < params.num; i++) {
@@ -137,12 +143,12 @@ export default class CustomGemini extends AbstractAISDKModel {
         responseModalities: ['TEXT', 'IMAGE'],
       }
       if (params.aspectRatio && params.aspectRatio !== 'auto') {
-        providerOptions.imageConfig = { aspectRatio: params.aspectRatio }
+        providerOptions.imageConfig = { aspectRatio: params.aspectRatio as GeminiImageAspectRatio }
       }
 
       const result = await generateText({
         model,
-        messages: [{ role: 'user', content: params.prompt }],
+        messages: [{ role: 'user', content: messageContent }],
         abortSignal: signal,
         providerOptions: {
           google: providerOptions,
