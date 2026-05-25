@@ -33,7 +33,7 @@ export const DEFAULT_DOCUMENT_PARSER_CONFIG: DocumentParserConfig = {
 
 export const ProviderModelInfoSchema = z.object({
   modelId: z.string(),
-  type: z.enum(['chat', 'embedding', 'rerank']).optional().catch(undefined),
+  type: z.enum(['chat', 'embedding', 'rerank', 'image']).optional().catch(undefined),
   apiStyle: z.enum(['google', 'openai', 'anthropic']).optional().catch(undefined),
   nickname: z.string().optional().catch(undefined),
   labels: z.array(z.string()).optional().catch([]),
@@ -394,7 +394,7 @@ export const SettingsSchema = GlobalSessionSettingsSchema.extend({
   compactionThreshold: z.number().min(0.4).max(0.9).default(0.6),
 
   autoLaunch: z.boolean().default(false),
-  autoUpdate: z.boolean().default(true), // 是否自动检查更新
+  autoUpdate: z.boolean().default(false), // 是否自动检查更新
   betaUpdate: z.boolean().default(false), // 是否自动检查 beta 更新
 
   shortcuts: ShortcutSettingSchema,

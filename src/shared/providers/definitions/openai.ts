@@ -11,6 +11,7 @@ export const openaiProvider = defineProvider({
   description: 'openai',
   modelsDevProviderId: 'openai',
   curatedModelIds: [
+    'gpt-image-2',
     'gpt-5.4',
     'gpt-5-mini',
     'gpt-4o',
@@ -27,6 +28,11 @@ export const openaiProvider = defineProvider({
     apiHost: 'https://api.openai.com',
     // https://platform.openai.com/docs/models
     models: [
+      {
+        modelId: 'gpt-image-2',
+        type: 'image',
+        capabilities: ['vision'],
+      },
       {
         modelId: 'gpt-5.4',
         capabilities: ['vision', 'tool_use', 'reasoning'],

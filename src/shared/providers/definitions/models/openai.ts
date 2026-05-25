@@ -40,12 +40,6 @@ export default class OpenAI extends AbstractAISDKModel {
       apiKey: this.options.apiKey,
       baseURL: this.options.apiHost,
       fetch: createFetchWithProxy(this.options.useProxy, this.dependencies),
-      headers: this.options.apiHost.includes('openrouter.ai')
-        ? {
-            'HTTP-Referer': 'https://chatboxai.app',
-            'X-Title': 'Chatbox AI',
-          }
-        : undefined,
     })
   }
 
@@ -59,7 +53,7 @@ export default class OpenAI extends AbstractAISDKModel {
 
   protected getImageModel(modelId?: string) {
     const provider = this.getProvider()
-    const imageModelId = modelId || this.options.model.modelId || 'gpt-image-1'
+    const imageModelId = modelId || this.options.model.modelId || 'gpt-image-2'
     return provider.image(imageModelId)
   }
 

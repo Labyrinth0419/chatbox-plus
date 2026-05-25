@@ -24,6 +24,8 @@ export interface CreateModelConfig {
   formattedApiPath: string
   /** The selected model configuration */
   model: ProviderModelInfo
+  /** The resolved API key after applying OAuth/shared-auth precedence. */
+  effectiveApiKey: string
 }
 
 /**

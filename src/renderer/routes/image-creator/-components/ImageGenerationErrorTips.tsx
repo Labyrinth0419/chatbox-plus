@@ -2,13 +2,8 @@ import { Button, Flex, Paper, Text } from '@mantine/core'
 import { ChatboxAIAPIError } from '@shared/models/errors'
 import type { ImageGeneration } from '@shared/types'
 import { IconRefresh, IconSettings, IconX } from '@tabler/icons-react'
-import { Trans, useTranslation } from 'react-i18next'
-import LinkTargetBlank from '@/components/common/Link'
+import { useTranslation } from 'react-i18next'
 import { navigateToSettings } from '@/modals/Settings'
-import { trackingEvent } from '@/packages/event'
-import { buildChatboxUrl } from '@/packages/remote'
-import platform from '@/platform'
-import * as settingActions from '@/stores/settingActions'
 
 export interface ImageGenerationErrorTipsProps {
   record: ImageGeneration
@@ -21,8 +16,6 @@ export function ImageGenerationErrorTips({ record, onRetry, isRetrying }: ImageG
 
   const chatboxAIErrorDetail = record.errorCode ? ChatboxAIAPIError.getDetail(record.errorCode) : null
   const showDetailedError = !chatboxAIErrorDetail
-  const isLicenseError =
-    chatboxAIErrorDetail && ['license_not_found', 'expired_license'].includes(chatboxAIErrorDetail.name)
 
   return (
     <Paper
@@ -41,40 +34,7 @@ export function ImageGenerationErrorTips({ record, onRetry, isRetrying }: ImageG
 
         {chatboxAIErrorDetail ? (
           <Text size="sm" c="dimmed" ta="center" maw={400}>
-            <Trans
-              i18nKey={chatboxAIErrorDetail.i18nKey}
-              values={{
-                model: record.model.modelId,
-              }}
-              components={{
-                OpenSettingButton: (
-                  <Text
-                    component="span"
-                    className="cursor-pointer underline"
-                    c="chatbox-brand"
-                    onClick={() => navigateToSettings()}
-                  />
-                ),
-                OpenMorePlanButton: (
-                  <Text
-                    component="span"
-                    className="cursor-pointer underline"
-                    c="chatbox-brand"
-                    onClick={() => {
-                      platform.openLink(
-                        buildChatboxUrl(
-                          `/redirect_app/view_more_plans/${settingActions.getLanguage()}?utm_source=app&utm_content=image_creator_upgrade_required`
-                        )
-                      )
-                      trackingEvent('click_view_more_plans_button_from_image_creator', {
-                        event_category: 'user',
-                      })
-                    }}
-                  />
-                ),
-                LinkToHomePage: <LinkTargetBlank href="https://chatboxai.app" />,
-              }}
-            />
+            {t('The selected image model is not available. Please switch to another configured model in Settings.')}
           </Text>
         ) : (
           <Text size="sm" c="dimmed" ta="center" className="whitespace-pre-wrap" maw={400}>
@@ -89,17 +49,15 @@ export function ImageGenerationErrorTips({ record, onRetry, isRetrying }: ImageG
         )}
 
         <Flex gap="sm">
-          {isLicenseError && (
-            <Button
-              variant="light"
-              color="gray"
-              leftSection={<IconSettings size={16} />}
-              onClick={() => navigateToSettings()}
-              radius="md"
-            >
-              {t('Settings')}
-            </Button>
-          )}
+          <Button
+            variant="light"
+            color="gray"
+            leftSection={<IconSettings size={16} />}
+            onClick={() => navigateToSettings('/provider')}
+            radius="md"
+          >
+            {t('Settings')}
+          </Button>
           <Button
             variant="light"
             color="chatbox-error"

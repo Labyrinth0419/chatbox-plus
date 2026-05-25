@@ -3,8 +3,8 @@ import { enrichModelFromRegistry } from '../model-registry/enrich'
 import { mergeSharedOAuthProviderSettings, resolveEffectiveApiKey } from '../oauth'
 import type { Config, ProviderModelInfo, ProviderSettings, SessionSettings, Settings } from '../types'
 import type { ModelDependencies } from '../types/adapters'
-// ChatboxAI must be imported first to ensure it appears at the top of provider lists
-// Import order determines display order in UI (side-effect registration into Map)
+// Register ChatboxAI first for legacy data compatibility; no-subscription UI filters it from provider lists.
+// Import order determines display order in UI for providers that remain visible.
 import './definitions/chatboxai'
 import './definitions/openai'
 import './definitions/openai-responses'

@@ -3,7 +3,8 @@ export const MAX_REFERENCE_IMAGES = 14
 export const HISTORY_PANEL_WIDTH = 280
 
 export const IMAGE_MODEL_FALLBACK_NAMES: Record<string, string> = {
-  '': 'GPT Image',
+  '': 'GPT Image 2',
+  'gpt-image-2': 'GPT Image 2',
   'gpt-image-1': 'GPT Image 1',
   'gpt-image-1.5': 'GPT Image 1.5',
   'gemini-2.5-flash-image': 'Nano Banana',
@@ -11,14 +12,7 @@ export const IMAGE_MODEL_FALLBACK_NAMES: Record<string, string> = {
   'gemini-3-pro-image': 'Nano Banana Pro',
 }
 
-export const CHATBOXAI_IMAGE_MODEL_IDS = [
-  'gemini-2.5-flash-image',
-  'gemini-3-pro-image-preview',
-  'gemini-3-pro-image',
-  'gemini-3.1-flash-image-preview',
-  'gemini-3.1-flash-image',
-]
-export const OPENAI_IMAGE_MODEL_IDS = ['gpt-image-1', 'gpt-image-1.5']
+export const OPENAI_IMAGE_MODEL_IDS = ['gpt-image-2', 'gpt-image-1.5', 'gpt-image-1']
 export const GEMINI_IMAGE_MODEL_IDS = [
   'gemini-2.5-flash-image',
   'gemini-3-pro-image-preview',
@@ -38,6 +32,7 @@ const RATIO_OPTIONS: Record<ImageModelFamily, string[]> = {
 export function getRatioOptionsForModel(modelId: string): string[] {
   switch (modelId) {
     case '':
+    case 'gpt-image-2':
     case 'gpt-image-1':
     case 'gpt-image-1.5':
       return RATIO_OPTIONS.gpt

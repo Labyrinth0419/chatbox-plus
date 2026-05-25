@@ -9,14 +9,7 @@ interface ImageModel {
 }
 
 // model 白名单，与 provider models 取交集，保证只显示支持的模型
-const CHATBOXAI_IMAGE_MODEL_IDS = [
-  'gemini-2.5-flash-image',
-  'gemini-3-pro-image-preview',
-  'gemini-3-pro-image',
-  'gemini-3.1-flash-image-preview',
-  'gemini-3.1-flash-image',
-]
-const OPENAI_IMAGE_MODEL_IDS = ['gpt-image-1', 'gpt-image-1.5']
+const OPENAI_IMAGE_MODEL_IDS = ['gpt-image-2', 'gpt-image-1.5', 'gpt-image-1']
 const GEMINI_IMAGE_MODEL_IDS = [
   'gemini-2.5-flash-image',
   'gemini-3-pro-image-preview',
@@ -25,13 +18,8 @@ const GEMINI_IMAGE_MODEL_IDS = [
   'gemini-3.1-flash-image',
 ]
 
-export const CHATBOXAI_DEFAULT_IMAGE_MODEL: ImageModel = {
-  modelId: '',
-  displayName: 'GPT Image',
-}
-
 const IMAGE_MODEL_FALLBACK_NAMES: Record<string, string> = {
-  'chatboxai-paint': 'Chatbox AI Paint',
+  'gpt-image-2': 'GPT Image 2',
   'gpt-image-1': 'GPT Image 1',
   'gpt-image-1.5': 'GPT Image 1.5',
   'gemini-2.5-flash-image': 'Nano Banana',
@@ -41,7 +29,11 @@ const IMAGE_MODEL_FALLBACK_NAMES: Record<string, string> = {
   'gemini-3.1-flash-image': 'Nano Banana 2',
 }
 
-function getAvailableImageModels(provider: ProviderInfo, imageModelIds: string[]): ImageModel[] {
+function getAvailableImageModels(
+  provider: ProviderInfo,
+  imageModelIds: string[],
+  includeMissingCandidates = false
+): ImageModel[] {
   const providerModels = provider.models || provider.defaultSettings?.models || []
   const defaultModels = provider.defaultSettings?.models || []
   return imageModelIds
@@ -49,10 +41,10 @@ function getAvailableImageModels(provider: ProviderInfo, imageModelIds: string[]
       // Check user's model list first (preserves nickname), then fall back to defaults (picks up newly added models)
       const model =
         providerModels.find((m) => m.modelId === modelId) || defaultModels.find((m) => m.modelId === modelId)
-      if (!model) return null
+      if (!model && !includeMissingCandidates) return null
       return {
         modelId,
-        displayName: model.nickname || IMAGE_MODEL_FALLBACK_NAMES[modelId] || modelId,
+        displayName: model?.nickname || IMAGE_MODEL_FALLBACK_NAMES[modelId] || modelId,
       }
     })
     .filter((m): m is ImageModel => m !== null)
@@ -68,14 +60,6 @@ export const ImageModelSelect = forwardRef<HTMLButtonElement, ImageModelSelectPr
   ({ onSelect, children, ...comboboxProps }, ref) => {
     const { providers } = useProviders()
 
-    const chatboxAIImageModels = useMemo(() => {
-      const provider = providers.find((p) => p.id === ModelProviderEnum.ChatboxAI)
-      if (!provider) {
-        return []
-      }
-      return getAvailableImageModels(provider, CHATBOXAI_IMAGE_MODEL_IDS)
-    }, [providers])
-
     const geminiProvider = useMemo(() => {
       const provider = providers.find((p) => p.id === ModelProviderEnum.Gemini)
       if (!provider) return null
@@ -88,7 +72,21 @@ export const ImageModelSelect = forwardRef<HTMLButtonElement, ImageModelSelectPr
         .filter((p) => [ModelProviderEnum.OpenAI, ModelProviderEnum.Azure].includes(p.id as ModelProviderEnum))
         .map((provider) => ({
           provider,
-          imageModels: getAvailableImageModels(provider, OPENAI_IMAGE_MODEL_IDS),
+          imageModels: getAvailableImageModels(
+            provider,
+            OPENAI_IMAGE_MODEL_IDS,
+            provider.id === ModelProviderEnum.OpenAI
+          ),
+        }))
+        .filter((item) => item.imageModels.length > 0)
+    }, [providers])
+
+    const customOpenAIProviders = useMemo(() => {
+      return providers
+        .filter((p) => p.isCustom && p.type === ModelProviderType.OpenAI)
+        .map((provider) => ({
+          provider,
+          imageModels: getAvailableImageModels(provider, OPENAI_IMAGE_MODEL_IDS, true),
         }))
         .filter((item) => item.imageModels.length > 0)
     }, [providers])
@@ -133,49 +131,7 @@ export const ImageModelSelect = forwardRef<HTMLButtonElement, ImageModelSelectPr
 
         <Combobox.Dropdown className="!rounded-2xl !border-[var(--chatbox-border-primary)] !shadow-lg overflow-hidden">
           <Combobox.Options mah={400} style={{ overflowY: 'auto' }} className="p-1">
-            <Combobox.Group
-              label="Chatbox AI"
-              classNames={{ groupLabel: '!text-xs !font-semibold !uppercase tracking-wide' }}
-            >
-              <Combobox.Option
-                key={`${ModelProviderEnum.ChatboxAI}:${CHATBOXAI_DEFAULT_IMAGE_MODEL.modelId}`}
-                value={`${ModelProviderEnum.ChatboxAI}:${CHATBOXAI_DEFAULT_IMAGE_MODEL.modelId}`}
-                className="!rounded-lg"
-              >
-                <Text size="sm">{CHATBOXAI_DEFAULT_IMAGE_MODEL.displayName}</Text>
-              </Combobox.Option>
-              {chatboxAIImageModels.map((model) => (
-                <Combobox.Option
-                  key={`${ModelProviderEnum.ChatboxAI}:${model.modelId}`}
-                  value={`${ModelProviderEnum.ChatboxAI}:${model.modelId}`}
-                  className="!rounded-lg"
-                >
-                  <Text size="sm">{model.displayName}</Text>
-                </Combobox.Option>
-              ))}
-            </Combobox.Group>
-
-            {geminiProvider && (
-              <>
-                <Divider my="xs" />
-                <Combobox.Group
-                  label="Google Gemini"
-                  classNames={{ groupLabel: '!text-xs !font-semibold !uppercase tracking-wide' }}
-                >
-                  {geminiProvider.imageModels.map((model) => (
-                    <Combobox.Option
-                      key={`${ModelProviderEnum.Gemini}:${model.modelId}`}
-                      value={`${ModelProviderEnum.Gemini}:${model.modelId}`}
-                      className="!rounded-lg"
-                    >
-                      <Text size="sm">{model.displayName}</Text>
-                    </Combobox.Option>
-                  ))}
-                </Combobox.Group>
-              </>
-            )}
-
-            {customGeminiProviders.map(({ provider, imageModels }) => (
+            {openaiProviders.map(({ provider, imageModels }) => (
               <div key={provider.id}>
                 <Divider my="xs" />
                 <Combobox.Group
@@ -195,7 +151,47 @@ export const ImageModelSelect = forwardRef<HTMLButtonElement, ImageModelSelectPr
               </div>
             ))}
 
-            {openaiProviders.map(({ provider, imageModels }) => (
+            {customOpenAIProviders.map(({ provider, imageModels }) => (
+              <div key={provider.id}>
+                <Divider my="xs" />
+                <Combobox.Group
+                  label={provider.name}
+                  classNames={{ groupLabel: '!text-xs !font-semibold !uppercase tracking-wide' }}
+                >
+                  {imageModels.map((model) => (
+                    <Combobox.Option
+                      key={`${provider.id}:${model.modelId}`}
+                      value={`${provider.id}:${model.modelId}`}
+                      className="!rounded-lg"
+                    >
+                      <Text size="sm">{model.displayName}</Text>
+                    </Combobox.Option>
+                  ))}
+                </Combobox.Group>
+              </div>
+            ))}
+
+            {geminiProvider && (
+              <div>
+                <Divider my="xs" />
+                <Combobox.Group
+                  label="Google Gemini"
+                  classNames={{ groupLabel: '!text-xs !font-semibold !uppercase tracking-wide' }}
+                >
+                  {geminiProvider.imageModels.map((model) => (
+                    <Combobox.Option
+                      key={`${ModelProviderEnum.Gemini}:${model.modelId}`}
+                      value={`${ModelProviderEnum.Gemini}:${model.modelId}`}
+                      className="!rounded-lg"
+                    >
+                      <Text size="sm">{model.displayName}</Text>
+                    </Combobox.Option>
+                  ))}
+                </Combobox.Group>
+              </div>
+            )}
+
+            {customGeminiProviders.map(({ provider, imageModels }) => (
               <div key={provider.id}>
                 <Divider my="xs" />
                 <Combobox.Group

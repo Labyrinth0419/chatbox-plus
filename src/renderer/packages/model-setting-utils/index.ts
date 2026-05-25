@@ -1,7 +1,6 @@
 import { getProviderDefinition, getSystemProviders } from '@shared/providers'
 import {
   type ModelProvider,
-  ModelProviderEnum,
   type ModelProviderType,
   type SessionSettings,
   type SessionType,
@@ -22,7 +21,10 @@ export function getModelSettingUtil(
 }
 
 export function getModelDisplayName(settings: SessionSettings, globalSettings: Settings, sessionType: SessionType) {
-  const provider = settings.provider ?? ModelProviderEnum.ChatboxAI
+  const provider = settings.provider
+  if (!provider) {
+    return ''
+  }
   const model = settings.modelId ?? ''
 
   const registryProviders = getSystemProviders()

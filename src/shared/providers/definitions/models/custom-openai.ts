@@ -25,7 +25,10 @@ type FetchFunction = typeof globalThis.fetch
 export default class CustomOpenAI extends AbstractAISDKModel {
   public name = 'Custom OpenAI'
 
-  constructor(public options: Options, dependencies: ModelDependencies) {
+  constructor(
+    public options: Options,
+    dependencies: ModelDependencies
+  ) {
     super(options, dependencies)
     const { apiHost, apiPath } = normalizeOpenAIApiHostAndPath(options)
     this.options = { ...options, apiHost, apiPath }
@@ -50,16 +53,11 @@ export default class CustomOpenAI extends AbstractAISDKModel {
       apiKey: this.options.apiKey,
       baseURL: this.options.apiHost,
       fetch: fetchFunction,
-      headers: this.options.apiHost.includes('openrouter.ai')
+      headers: this.options.apiHost.includes('aihubmix.com')
         ? {
-            'HTTP-Referer': 'https://chatboxai.app',
-            'X-Title': 'Chatbox AI',
+            'APP-Code': 'VAFU9221',
           }
-        : this.options.apiHost.includes('aihubmix.com')
-          ? {
-              'APP-Code': 'VAFU9221',
-            }
-          : undefined,
+        : undefined,
     })
   }
 
@@ -86,7 +84,17 @@ export default class CustomOpenAI extends AbstractAISDKModel {
   }
 
   protected getImageModel() {
-    // Custom OpenAI providers typically don't support image generation
-    return null
+    const provider = createOpenAICompatible({
+      name: this.name,
+      apiKey: this.options.apiKey,
+      baseURL: this.options.apiHost,
+      fetch: createFetchWithProxy(this.options.useProxy, this.dependencies),
+      headers: this.options.apiHost.includes('aihubmix.com')
+        ? {
+            'APP-Code': 'VAFU9221',
+          }
+        : undefined,
+    })
+    return provider.imageModel(this.options.model.modelId)
   }
 }
