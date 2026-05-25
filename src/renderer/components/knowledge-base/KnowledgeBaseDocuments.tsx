@@ -23,9 +23,7 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconCircleCheck,
-  IconExclamationCircle,
   IconFile,
-  IconInfoCircle,
   IconLoader,
   IconPlayerPause,
   IconPlayerPlay,
@@ -42,9 +40,7 @@ import { useKnowledgeBaseFiles, useKnowledgeBaseFilesActions, useKnowledgeBaseFi
 import { useChunksPreview } from '@/hooks/useChunksPreview'
 import platform from '@/platform'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { trackEvent } from '@/utils/track'
 import ChunksPreviewModal from './ChunksPreviewModal'
-import { RemoteRetryModal } from './RemoteRetryModal'
 
 interface KnowledgeBaseDocumentsProps {
   knowledgeBase: KnowledgeBase | null
@@ -56,7 +52,6 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   const [showScrollIndicator, setShowScrollIndicator] = useState(true)
   const [isDragOver, setIsDragOver] = useState(false)
   const [showUploadArea, setShowUploadArea] = useState(false)
-  const [showRemoteRetryModal, setShowRemoteRetryModal] = useState(false)
 
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const globalDocumentParserType = useSettingsStore((state) => state.extension?.documentParser?.type)
@@ -101,19 +96,8 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
     return () => clearInterval(pollInterval)
   }, [knowledgeBase?.id, allFiles, refetch, refetchCount])
 
-  // Failed files for remote retry feature
+  // Failed files summary
   const failedFiles = useMemo(() => allFiles.filter((file) => file.status === 'failed'), [allFiles])
-
-  // Parser types that should NOT show the "use Chatbox AI" suggestion when they fail
-  const PARSER_NO_SUGGESTION_LIST: string[] = ['mineru', 'chatbox-ai']
-
-  // Check if we should show the Chatbox AI suggestion for failed files
-  // Show suggestion only if there are failed files that are NOT in the exception list
-  const shouldShowChatboxAISuggestion = useMemo(() => {
-    if (failedFiles.length === 0) return false
-    // Check if any failed file used a parser that should show the suggestion
-    return failedFiles.some((file) => !PARSER_NO_SUGGESTION_LIST.includes(file.parser_type || 'local'))
-  }, [failedFiles])
 
   // MIME type correction for Windows compatibility
   const correctMimeType = useCallback((file: File): FileMeta => {
@@ -572,13 +556,13 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
             case 'mineru':
               return t('MinerU parse failed')
             case 'chatbox-ai':
-              return t('Chatbox AI parse failed')
+              return t('Processing failed')
             case 'local':
             default:
               return t('Local parse failed')
           }
         }
-        const isRemoteParser = parserType === 'mineru' || parserType === 'chatbox-ai'
+        const isRemoteParser = parserType === 'mineru'
         return (
           <Flex gap={4} align="center">
             <Tooltip
@@ -763,21 +747,12 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
               </Box>
             )}
 
-            {/* Failed files banner - show Chatbox AI suggestion only for local parser failures */}
-            {shouldShowChatboxAISuggestion && (
+            {failedFiles.length > 0 && (
               <Alert variant="light" color="yellow" p="sm">
                 <Flex gap="xs" align="center" justify="space-between">
                   <Flex gap="xs" align="center" style={{ flex: 1 }}>
                     <Text size="sm">{t('{{count}} file(s) failed to parse', { count: failedFiles.length })}</Text>
                   </Flex>
-                  <Button
-                    size="xs"
-                    variant="light"
-                    className="flex-shrink-0"
-                    onClick={() => setShowRemoteRetryModal(true)}
-                  >
-                    {t('Use server parsing')}
-                  </Button>
                 </Flex>
               </Alert>
             )}
@@ -834,7 +809,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
                                     {doc.parser_type && (
                                       <Pill size="xs" c="dimmed">
                                         {doc.parser_type === 'chatbox-ai'
-                                          ? 'Chatbox AI'
+                                          ? t('Local')
                                           : doc.parser_type === 'mineru'
                                             ? 'MinerU'
                                             : 'Local'}
@@ -982,17 +957,6 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
         onClose={chunksPreview.closePreview}
         file={chunksPreview.selectedFile}
         knowledgeBaseId={knowledgeBase?.id}
-      />
-
-      {/* Remote Retry Modal */}
-      <RemoteRetryModal
-        opened={showRemoteRetryModal}
-        onClose={() => setShowRemoteRetryModal(false)}
-        failedFiles={failedFiles}
-        onSuccess={() => {
-          refetch()
-          refetchCount()
-        }}
       />
     </Stack>
   )

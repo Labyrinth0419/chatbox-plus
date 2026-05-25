@@ -30,6 +30,7 @@ import { estimateTokensFromMessages } from '@/packages/token'
 import platform from '@/platform'
 import storage from '@/storage'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
+import { commercialServicesEnabled } from '@/utils/commercial-flags'
 import { trackEvent } from '@/utils/track'
 import * as chatStore from '../chatStore'
 import { settingsStore } from '../settingsStore'
@@ -46,8 +47,8 @@ export function getSessionWebBrowsing(sessionId: string, provider: string | unde
   if (sessionValue !== undefined) {
     return sessionValue
   }
-  // Default: true for ChatboxAI, false for others
-  return provider === ModelProviderEnum.ChatboxAI
+  // Default: true for ChatboxAI only when commercial services are enabled, false for others.
+  return commercialServicesEnabled && provider === ModelProviderEnum.ChatboxAI
 }
 
 /**

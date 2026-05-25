@@ -14,6 +14,7 @@ import { runCompactionWithUIState } from '@/packages/context-management'
 import { getModelDisplayName } from '@/packages/model-setting-utils'
 import { estimateTokensFromMessages } from '@/packages/token'
 import platform from '@/platform'
+import { commercialServicesEnabled } from '@/utils/commercial-flags'
 import * as chatStore from '../chatStore'
 import * as settingActions from '../settingActions'
 import { settingsStore } from '../settingsStore'
@@ -28,8 +29,8 @@ function getSessionWebBrowsing(sessionId: string, provider: string | undefined):
   if (sessionValue !== undefined) {
     return sessionValue
   }
-  // Default: true for ChatboxAI, false for others
-  return provider === ModelProviderEnum.ChatboxAI
+  // Default: true for ChatboxAI only when commercial services are enabled, false for others.
+  return commercialServicesEnabled && provider === ModelProviderEnum.ChatboxAI
 }
 
 /**

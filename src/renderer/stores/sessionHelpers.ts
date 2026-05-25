@@ -17,7 +17,6 @@ import { formatChatAsHtml, formatChatAsMarkdown, formatChatAsTxt } from '@/lib/f
 import { getLogger } from '@/lib/utils'
 import { PREVIEW_LINES } from '@/packages/context-management/attachment-payload'
 import * as localParser from '@/packages/local-parser'
-import * as remote from '@/packages/remote'
 import { estimateTokens, getTokenizerType } from '@/packages/token'
 import platform from '@/platform'
 import storage from '@/storage'
@@ -26,7 +25,6 @@ import { migrateSession, sortSessions } from '@/utils/session-utils'
 import * as defaults from '../../shared/defaults'
 import { createMessage, type Message, SessionSettingsSchema, TOKEN_CACHE_KEYS } from '../../shared/types'
 import { lastUsedModelStore } from './lastUsedModelStore'
-import * as settingActions from './settingActions'
 import { getPlatformDefaultDocumentParser, settingsStore } from './settingsStore'
 
 const log = getLogger('session-helpers')
@@ -96,39 +94,6 @@ async function parseFileWithLocalParser(
 
   // Get content from temporary storage
   const content = (await storage.getBlob(result.key).catch(() => '')) || ''
-
-  // Store content to unique key
-  if (content) {
-    await storage.setBlob(uniqKey, content)
-  }
-
-  // Calculate token counts
-  const tokenCountMap: Record<string, number> = content
-    ? {
-        [TOKEN_CACHE_KEYS.default]: estimateTokens(content),
-        [TOKEN_CACHE_KEYS.deepseek]: estimateTokens(content, { provider: '', modelId: 'deepseek' }),
-      }
-    : {}
-
-  if (content) {
-    await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
-  }
-
-  return { content, storageKey: uniqKey, tokenCountMap }
-}
-
-/**
- * Parse file using Chatbox AI cloud service
- */
-async function parseFileWithChatboxAI(
-  file: File,
-  uniqKey: string
-): Promise<{ content: string; storageKey: string; tokenCountMap: Record<string, number> }> {
-  const licenseKey = settingActions.getLicenseKey()
-  const uploadedKey = await remote.uploadAndCreateUserFile(licenseKey || '', file)
-
-  // Get uploaded file content
-  const content = (await storage.getBlob(uploadedKey).catch(() => '')) || ''
 
   // Store content to unique key
   if (content) {
@@ -278,14 +243,7 @@ export async function preprocessFile(
         }
 
         case 'chatbox-ai': {
-          // Chatbox AI cloud parsing - available on all platforms
-          try {
-            result = await parseFileWithChatboxAI(file, uniqKey)
-          } catch (error) {
-            log.error(`Chatbox AI parsing failed for "${file.name}":`, error)
-            throw new Error('chatbox_ai_parser_failed')
-          }
-          break
+          throw new Error('document_parser_not_configured')
         }
 
         case 'mineru': {
@@ -361,7 +319,6 @@ export async function preprocessLink(
   error?: string
 }> {
   try {
-    const isPro = settingActions.isPro()
     const uniqKey = StorageKeyGenerator.linkUniqKey(url)
 
     // 检查是否已经处理过这个链接
@@ -397,67 +354,30 @@ export async function preprocessLink(
       }
     }
 
-    if (isPro) {
-      // ChatboxAI 方案：使用远程解析
-      const licenseKey = settingActions.getLicenseKey()
-      const parsed = await remote.parseUserLinkPro({ licenseKey: licenseKey || '', url })
+    const { key, title } = await localParser.parseUrl(url)
+    const content = (await storage.getBlob(key).catch(() => '')) || ''
 
-      // 获取解析后的内容
-      const content = (await storage.getBlob(parsed.storageKey).catch(() => '')) || ''
+    if (content) {
+      await storage.setBlob(uniqKey, content)
+    }
 
-      // 将内容存储到唯一键下
-      if (content) {
-        await storage.setBlob(uniqKey, content)
-      }
+    const tokenizerType = getCurrentTokenizerType()
+    const { lineCount, byteLength, tokenCountMap } = content
+      ? computePreviewMetadata(content, tokenizerType)
+      : { lineCount: undefined, byteLength: undefined, tokenCountMap: {} }
 
-      // Calculate token counts including preview metadata
-      const tokenizerType = getCurrentTokenizerType()
-      const { lineCount, byteLength, tokenCountMap } = content
-        ? computePreviewMetadata(content, tokenizerType)
-        : { lineCount: undefined, byteLength: undefined, tokenCountMap: {} }
+    if (content) {
+      await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
+    }
 
-      // Store token map for future use
-      if (content) {
-        await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
-      }
-
-      return {
-        url,
-        title: parsed.title,
-        content,
-        storageKey: uniqKey,
-        tokenCountMap,
-        lineCount,
-        byteLength,
-      }
-    } else {
-      // 本地方案：解析链接内容
-      const { key, title } = await localParser.parseUrl(url)
-      const content = (await storage.getBlob(key).catch(() => '')) || ''
-
-      // 将内容存储到唯一键下
-      if (content) {
-        await storage.setBlob(uniqKey, content)
-      }
-
-      const tokenizerType = getCurrentTokenizerType()
-      const { lineCount, byteLength, tokenCountMap } = content
-        ? computePreviewMetadata(content, tokenizerType)
-        : { lineCount: undefined, byteLength: undefined, tokenCountMap: {} }
-
-      if (content) {
-        await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
-      }
-
-      return {
-        url,
-        title,
-        content,
-        storageKey: uniqKey,
-        tokenCountMap,
-        lineCount,
-        byteLength,
-      }
+    return {
+      url,
+      title,
+      content,
+      storageKey: uniqKey,
+      tokenCountMap,
+      lineCount,
+      byteLength,
     }
   } catch (error) {
     return {
