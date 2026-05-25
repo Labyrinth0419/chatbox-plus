@@ -22,6 +22,7 @@ export function useOAuth(
     useProviderSettings(authModeProviderId)
   const refreshingRef = useRef(false)
   const mountedRef = useRef(true)
+  const activeFlowRef = useRef(false)
 
   const isDesktop = platform.type === 'desktop'
   const hasOAuth = !!tokenProviderSettings?.oauth?.accessToken
@@ -33,25 +34,29 @@ export function useOAuth(
     mountedRef.current = true
     return () => {
       mountedRef.current = false
-      if (isDesktop) {
+      if (isDesktop && activeFlowRef.current) {
         ;(platform as any).ipc.invoke(OAuthIpcChannels.CANCEL, oauthProviderId).catch(() => {})
+        activeFlowRef.current = false
       }
     }
   }, [isDesktop, oauthProviderId])
 
   // --- Cancel flow ---
   const cancel = useCallback(async () => {
-    if (!isDesktop) return
+    if (!isDesktop || !activeFlowRef.current) return
     try {
       await (platform as any).ipc.invoke(OAuthIpcChannels.CANCEL, oauthProviderId)
     } catch {
       // ignore
+    } finally {
+      activeFlowRef.current = false
     }
   }, [isDesktop, oauthProviderId])
 
   // --- Callback flow (OpenAI) ---
   const loginCallback = useCallback(async (): Promise<OAuthResult> => {
     if (!isDesktop) return { success: false, error: 'Not desktop' }
+    activeFlowRef.current = true
     try {
       const resultJson: string = await (platform as any).ipc.invoke(OAuthIpcChannels.LOGIN, oauthProviderId)
       const result: OAuthResult = JSON.parse(resultJson)
@@ -62,16 +67,24 @@ export function useOAuth(
       return result
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) }
+    } finally {
+      activeFlowRef.current = false
     }
   }, [isDesktop, oauthProviderId, setAuthModeProviderSettings, setTokenProviderSettings])
 
   // --- Code-paste flow (Anthropic) ---
   const startLogin = useCallback(async (): Promise<OAuthStartResult> => {
     if (!isDesktop) return { success: false, error: 'Not desktop' }
+    activeFlowRef.current = true
     try {
       const resultJson: string = await (platform as any).ipc.invoke(OAuthIpcChannels.START_LOGIN, oauthProviderId)
-      return JSON.parse(resultJson)
+      const result: OAuthStartResult = JSON.parse(resultJson)
+      if (!result.success) {
+        activeFlowRef.current = false
+      }
+      return result
     } catch (error) {
+      activeFlowRef.current = false
       return { success: false, error: error instanceof Error ? error.message : String(error) }
     }
   }, [isDesktop, oauthProviderId])
@@ -93,6 +106,8 @@ export function useOAuth(
         return result
       } catch (error) {
         return { success: false, error: error instanceof Error ? error.message : String(error) }
+      } finally {
+        activeFlowRef.current = false
       }
     },
     [isDesktop, oauthProviderId, setAuthModeProviderSettings, setTokenProviderSettings]
@@ -101,10 +116,16 @@ export function useOAuth(
   // --- Device-code flow (GitHub Copilot) ---
   const startDeviceFlow = useCallback(async (): Promise<DeviceFlowStartResult> => {
     if (!isDesktop) return { success: false, error: 'Not desktop' }
+    activeFlowRef.current = true
     try {
       const resultJson: string = await (platform as any).ipc.invoke(OAuthIpcChannels.START_DEVICE_FLOW, oauthProviderId)
-      return JSON.parse(resultJson)
+      const result: DeviceFlowStartResult = JSON.parse(resultJson)
+      if (!result.success) {
+        activeFlowRef.current = false
+      }
+      return result
     } catch (error) {
+      activeFlowRef.current = false
       return { success: false, error: error instanceof Error ? error.message : String(error) }
     }
   }, [isDesktop, oauthProviderId])
@@ -121,6 +142,8 @@ export function useOAuth(
       return result
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) }
+    } finally {
+      activeFlowRef.current = false
     }
   }, [isDesktop, oauthProviderId, setAuthModeProviderSettings, setTokenProviderSettings])
 
