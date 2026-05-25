@@ -37,11 +37,12 @@ function RouteComponent() {
             <Image h={100} w={100} mah={'20vw'} maw={'20vw'} src={iconPNG} />
             <Stack flex={1} gap="xxs">
               <Flex justify="space-between" align="center" wrap="wrap" gap={isSmallScreen ? 'xs' : 'sm'} rowGap="xs">
-                <Title order={5} lh={1.5} lineClamp={1} title={`Chatbox v${version.version}`}>
-                  Chatbox {/\d/.test(version.version) ? `(v${version.version})` : ''}
+                <Title order={5} lh={1.5} lineClamp={1} title={`Chatbox Plus v${version.version}`}>
+                  Chatbox Plus {/\d/.test(version.version) ? `(v${version.version})` : ''}
                 </Title>
               </Flex>
               <Text>{t('about-slogan')}</Text>
+              <Text c="chatbox-tertiary">Unofficial GPLv3 fork of Chatbox Community Edition.</Text>
               <Text c="chatbox-tertiary">{t('about-introduction')}</Text>
             </Stack>
           </Flex>
@@ -50,8 +51,8 @@ function RouteComponent() {
             <ListItem
               icon={<BrandGithub className="w-full h-full" />}
               title={t('Github')}
-              link="https://github.com/chatboxai/chatbox"
-              value="chatbox"
+              link="https://github.com/Labyrinth0419/chatbox-plus"
+              value="chatbox-plus"
             />
           </List>
         </Stack>

@@ -3,7 +3,9 @@
   <a href="./doc/README-CN.md">简体中文</a>
 </p>
 
-This is the repository for the Chatbox Community Edition, open-sourced under the GPLv3 license.
+This is the repository for Chatbox Plus, an unofficial modified fork of Chatbox Community Edition.
+Chatbox Plus is not affiliated with ChatboxAI or the upstream Chatbox project.
+This fork is distributed under the GPLv3 license.
 
 [Chatbox is going open-source Again!](https://github.com/chatboxai/chatbox/issues/2266)
 
@@ -278,8 +280,8 @@ Before you begin, ensure you have the following installed:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/chatboxai/chatbox.git
-   cd chatbox
+   git clone https://github.com/Labyrinth0419/chatbox-plus.git
+   cd chatbox-plus
    ```
 
 2. **Install dependencies**

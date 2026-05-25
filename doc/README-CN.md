@@ -3,7 +3,9 @@
   <a href="README-CN.md">简体中文</a>
 </p>
 
-这里是 Chatbox 社区版的代码仓库，以 GPLv3 许可证开源。
+这里是 Chatbox Plus 的代码仓库。Chatbox Plus 是基于 Chatbox 社区版修改的非官方 fork。
+Chatbox Plus 与 ChatboxAI 或上游 Chatbox 项目无隶属关系。
+本 fork 以 GPLv3 许可证发布。
 
 [Chatbox 再次开源！](https://github.com/chatboxai/chatbox/issues/2266)
 
@@ -195,7 +197,7 @@
 1. 从 Github 克隆仓库
 
 ```bash
-git clone https://github.com/chatboxai/chatbox.git
+git clone https://github.com/Labyrinth0419/chatbox-plus.git
 ```
 
 2. 安装所需的依赖
