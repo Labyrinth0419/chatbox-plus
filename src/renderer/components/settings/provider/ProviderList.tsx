@@ -82,7 +82,7 @@ export function ProviderList({ providers, onAddProvider, onImportProvider, isImp
               >
                 {provider.isCustom ? (
                   provider.iconUrl ? (
-                    <Image w={32} h={32} src={provider.iconUrl} alt={provider.name} />
+                    <Image w={32} h={32} radius="xl" fit="cover" src={provider.iconUrl} alt={provider.name} />
                   ) : (
                     <CustomProviderIcon providerId={provider.id} providerName={provider.name} size={32} />
                   )

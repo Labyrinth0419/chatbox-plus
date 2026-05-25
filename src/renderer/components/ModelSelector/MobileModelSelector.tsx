@@ -17,6 +17,7 @@ type FilteredProvider = {
   id: string
   name: string
   isCustom?: boolean
+  iconUrl?: string
   models?: ProviderModelInfo[]
 }
 

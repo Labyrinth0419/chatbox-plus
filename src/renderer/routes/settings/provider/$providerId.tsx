@@ -3,6 +3,7 @@ import {
   Badge,
   Button,
   Flex,
+  Image,
   Loader,
   PasswordInput,
   SegmentedControl,
@@ -17,6 +18,7 @@ import { SystemProviders } from '@shared/defaults'
 import { type OAuthProviderInfo, toOAuthProviderId, toOAuthSettingsProviderId } from '@shared/oauth'
 import { getProviderDefinition } from '@shared/providers'
 import {
+  type CustomProviderBaseInfo,
   ModelProviderEnum,
   ModelProviderType,
   type ProviderModelInfo,
@@ -50,6 +52,7 @@ import { trackJkClickEvent } from '@/analytics/jk'
 import { JK_EVENTS, JK_PAGE_NAMES } from '@/analytics/jk-events'
 import { AdaptiveSelect } from '@/components/AdaptiveSelect'
 import { AdaptiveModal } from '@/components/common/AdaptiveModal'
+import CustomProviderIcon from '@/components/CustomProviderIcon'
 import PopoverConfirm from '@/components/common/PopoverConfirm'
 import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { ModelList } from '@/components/ModelList'
@@ -284,6 +287,18 @@ function ProviderSettings({ providerId }: { providerId: string }) {
       apiPath: e.currentTarget.value,
     })
   }
+
+  const updateCustomProvider = (
+    updates: Partial<Pick<CustomProviderBaseInfo, 'name' | 'type' | 'iconUrl'>>
+  ) => {
+    if (!baseInfo?.isCustom) return
+    setSettings({
+      customProviders: settings.customProviders?.map((provider) =>
+        provider.id === baseInfo.id ? { ...provider, ...updates } : provider
+      ),
+    })
+  }
+
   const normalizedBuiltinApiHost = baseInfo
     ? normalizeAPIHost(
         {
@@ -491,17 +506,40 @@ function ProviderSettings({ providerId }: { providerId: string }) {
           <>
             <Stack gap="xxs">
               <Text span fw="600">
+                {t('Icon')}
+              </Text>
+              <Flex gap="xs" align="center">
+                {baseInfo.iconUrl ? (
+                  <Image w={48} h={48} radius="xl" fit="cover" src={baseInfo.iconUrl} alt={baseInfo.name} />
+                ) : (
+                  <CustomProviderIcon providerId={baseInfo.id} providerName={baseInfo.name} size={48} />
+                )}
+                <TextInput
+                  flex={1}
+                  value={baseInfo.iconUrl || ''}
+                  placeholder="https://example.com/icon.png"
+                  onChange={(e) => updateCustomProvider({ iconUrl: e.currentTarget.value || undefined })}
+                />
+                <Button
+                  variant="light"
+                  color="gray"
+                  disabled={!baseInfo.iconUrl}
+                  onClick={() => updateCustomProvider({ iconUrl: undefined })}
+                >
+                  {t('Reset')}
+                </Button>
+              </Flex>
+            </Stack>
+
+            <Stack gap="xxs">
+              <Text span fw="600">
                 {t('Name')}
               </Text>
               <TextInput
                 flex={1}
                 value={baseInfo.name}
                 onChange={(e) => {
-                  setSettings({
-                    customProviders: settings.customProviders?.map((p) =>
-                      p.id === baseInfo.id ? { ...p, name: e.currentTarget.value } : p
-                    ),
-                  })
+                  updateCustomProvider({ name: e.currentTarget.value })
                 }}
               />
             </Stack>
@@ -513,11 +551,7 @@ function ProviderSettings({ providerId }: { providerId: string }) {
               <AdaptiveSelect
                 value={baseInfo.type}
                 onChange={(value) => {
-                  setSettings({
-                    customProviders: settings.customProviders?.map((p) =>
-                      p.id === baseInfo.id ? { ...p, type: value as ModelProviderType } : p
-                    ),
-                  })
+                  updateCustomProvider({ type: value as ModelProviderType })
                 }}
                 data={[
                   {

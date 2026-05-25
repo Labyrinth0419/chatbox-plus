@@ -11,7 +11,10 @@ export const SELECTED_BG_CLASS = '!bg-chatbox-background-brand-secondary'
 export const TRANSITION_DURATION = 200
 
 // Helper function to group favorite models by provider
-export type FavoriteModel = { provider?: { id: string; name: string; isCustom?: boolean }; model?: ProviderModelInfo }
+export type FavoriteModel = {
+  provider?: { id: string; name: string; isCustom?: boolean; iconUrl?: string }
+  model?: ProviderModelInfo
+}
 export const groupFavoriteModels = (favoritedModels: FavoriteModel[] | undefined) => {
   if (!favoritedModels) return {}
 
