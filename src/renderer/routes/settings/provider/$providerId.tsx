@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   Flex,
-  Image,
   Loader,
   PasswordInput,
   SegmentedControl,
@@ -41,18 +40,19 @@ import {
   IconRefresh,
   IconRestore,
   IconTrash,
+  IconUpload,
   IconX,
 } from '@tabler/icons-react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { uniq } from 'lodash'
-import { type ChangeEvent, useState } from 'react'
+import { type ChangeEvent, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createModelDependencies } from '@/adapters'
 import { trackJkClickEvent } from '@/analytics/jk'
 import { JK_EVENTS, JK_PAGE_NAMES } from '@/analytics/jk-events'
 import { AdaptiveSelect } from '@/components/AdaptiveSelect'
 import { AdaptiveModal } from '@/components/common/AdaptiveModal'
-import CustomProviderIcon from '@/components/CustomProviderIcon'
+import { CustomProviderAvatar } from '@/components/CustomProviderIcon'
 import PopoverConfirm from '@/components/common/PopoverConfirm'
 import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { ModelList } from '@/components/ModelList'
@@ -63,6 +63,11 @@ import { getModelSettingUtil } from '@/packages/model-setting-utils'
 import platform from '@/platform'
 import { useProviderSettings, useSettingsStore } from '@/stores/settingsStore'
 import { add as addToast } from '@/stores/toastActions'
+import {
+  isCustomProviderIconStorageUrl,
+  isSupportedCustomProviderIconFile,
+  saveCustomProviderIconFile,
+} from '@/utils/custom-provider-icon'
 import { type ModelTestState, testModelCapabilities } from '@/utils/model-tester'
 
 export const Route = createFileRoute('/settings/provider/$providerId')({
@@ -139,6 +144,7 @@ function ProviderSettings({ providerId }: { providerId: string }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { setSettings, ...settings } = useSettingsStore((state) => state)
+  const customProviderIconInputRef = useRef<HTMLInputElement | null>(null)
 
   const baseInfo = [...SystemProviders(), ...(settings.customProviders || [])].find((p) => p.id === providerId)
 
@@ -297,6 +303,25 @@ function ProviderSettings({ providerId }: { providerId: string }) {
         provider.id === baseInfo.id ? { ...provider, ...updates } : provider
       ),
     })
+  }
+
+  const handleCustomProviderIconUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+    if (!file || !baseInfo?.isCustom) return
+
+    if (!isSupportedCustomProviderIconFile(file)) {
+      addToast(t('Support jpg or png file smaller than 5MB'))
+      return
+    }
+
+    try {
+      const iconUrl = await saveCustomProviderIconFile(file, baseInfo.id)
+      updateCustomProvider({ iconUrl })
+    } catch (error) {
+      console.error('Failed to upload custom provider icon:', error)
+      addToast(t('Support jpg or png file smaller than 5MB'))
+    }
   }
 
   const normalizedBuiltinApiHost = baseInfo
@@ -508,18 +533,33 @@ function ProviderSettings({ providerId }: { providerId: string }) {
               <Text span fw="600">
                 {t('Icon')}
               </Text>
-              <Flex gap="xs" align="center">
-                {baseInfo.iconUrl ? (
-                  <Image w={48} h={48} radius="xl" fit="cover" src={baseInfo.iconUrl} alt={baseInfo.name} />
-                ) : (
-                  <CustomProviderIcon providerId={baseInfo.id} providerName={baseInfo.name} size={48} />
-                )}
+              <Flex gap="xs" align="center" wrap="wrap">
+                <input
+                  ref={customProviderIconInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/png,image/jpeg"
+                  onChange={handleCustomProviderIconUpload}
+                />
+                <CustomProviderAvatar
+                  providerId={baseInfo.id}
+                  providerName={baseInfo.name}
+                  iconUrl={baseInfo.iconUrl}
+                  size={48}
+                />
                 <TextInput
                   flex={1}
-                  value={baseInfo.iconUrl || ''}
+                  value={isCustomProviderIconStorageUrl(baseInfo.iconUrl) ? '' : baseInfo.iconUrl || ''}
                   placeholder="https://example.com/icon.png"
                   onChange={(e) => updateCustomProvider({ iconUrl: e.currentTarget.value || undefined })}
                 />
+                <Button
+                  variant="light"
+                  leftSection={<ScalableIcon icon={IconUpload} size={14} />}
+                  onClick={() => customProviderIconInputRef.current?.click()}
+                >
+                  {t('Upload')}
+                </Button>
                 <Button
                   variant="light"
                   color="gray"

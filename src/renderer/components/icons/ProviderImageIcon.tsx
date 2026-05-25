@@ -3,7 +3,7 @@
 import { Image } from '@mantine/core'
 import type { ModelProvider } from '@shared/types'
 import { useProviders } from '@/hooks/useProviders'
-import CustomProviderIcon from '../CustomProviderIcon'
+import CustomProviderIcon, { CustomProviderAvatar } from '../CustomProviderIcon'
 
 // Use Vite's import.meta.glob to dynamically import all PNG files
 // Vite handles import.meta.glob at build time, even though TypeScript doesn't recognize it with commonjs module setting
@@ -27,14 +27,17 @@ export default function ProviderImageIcon(props: {
 }) {
   const { className, size = 24, provider, providerName } = props
 
-  const {providers} = useProviders()
+  const { providers } = useProviders()
   const providerInfo = providers.find((p) => p.id === provider)
-  
-  if(providerInfo?.isCustom){
-    return providerInfo.iconUrl ? (
-      <Image w={size} h={size} src={providerInfo.iconUrl} alt={providerInfo.name} />
-    ) : (
-      <CustomProviderIcon providerId={providerInfo.id} providerName={providerInfo.name} size={size} />
+
+  if (providerInfo?.isCustom) {
+    return (
+      <CustomProviderAvatar
+        providerId={providerInfo.id}
+        providerName={providerInfo.name}
+        iconUrl={providerInfo.iconUrl}
+        size={size}
+      />
     )
   }
 

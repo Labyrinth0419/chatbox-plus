@@ -1,10 +1,16 @@
-import { Flex, Text } from '@mantine/core'
+import { Box, Flex, Image, Text } from '@mantine/core'
 import type { FC } from 'react'
+import { getCustomProviderIconStorageKey } from '@/utils/custom-provider-icon'
+import { ImageInStorage } from './Image'
 
 export type CustomProviderIconProps = {
   providerId: string
   providerName: string
   size?: number
+}
+
+export type CustomProviderAvatarProps = CustomProviderIconProps & {
+  iconUrl?: string
 }
 
 const BG_COLORS = [
@@ -39,6 +45,29 @@ export const CustomProviderIcon: FC<CustomProviderIconProps> = ({ providerId, pr
       </Text>
     </Flex>
   )
+}
+
+export const CustomProviderAvatar: FC<CustomProviderAvatarProps> = ({
+  providerId,
+  providerName,
+  iconUrl,
+  size = DEFAULT_SIZE,
+}) => {
+  const storageKey = getCustomProviderIconStorageKey(iconUrl)
+
+  if (storageKey) {
+    return (
+      <Box w={size} h={size} className="rounded-full overflow-hidden bg-chatbox-background-secondary flex-shrink-0">
+        <ImageInStorage storageKey={storageKey} className="object-cover object-center w-full h-full" />
+      </Box>
+    )
+  }
+
+  if (iconUrl) {
+    return <Image w={size} h={size} radius="xl" fit="cover" src={iconUrl} alt={providerName} />
+  }
+
+  return <CustomProviderIcon providerId={providerId} providerName={providerName} size={size} />
 }
 
 export default CustomProviderIcon

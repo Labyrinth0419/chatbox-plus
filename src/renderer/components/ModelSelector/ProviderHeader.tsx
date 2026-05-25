@@ -1,7 +1,8 @@
-import { Flex, Image, Text } from '@mantine/core'
+import { Flex, Text } from '@mantine/core'
 import { IconChevronDown, IconServer, IconStarFilled } from '@tabler/icons-react'
 import clsx from 'clsx'
 import Divider from '../common/Divider'
+import { CustomProviderAvatar } from '../CustomProviderIcon'
 import ProviderIcon from '../icons/ProviderIcon'
 import { ScalableIcon } from '../common/ScalableIcon'
 
@@ -109,7 +110,12 @@ export const ProviderHeader = ({
         {isFavorite ? (
           <ScalableIcon icon={IconStarFilled} size={iconSize} className={iconClass} />
         ) : provider.isCustom && provider.iconUrl ? (
-          <Image w={iconSize} h={iconSize} radius="xl" fit="cover" src={provider.iconUrl} alt={provider.name} />
+          <CustomProviderAvatar
+            providerId={provider.id}
+            providerName={provider.name}
+            iconUrl={provider.iconUrl}
+            size={iconSize}
+          />
         ) : provider.isCustom ? (
           <ScalableIcon icon={IconServer} size={iconSize} className={iconClass} />
         ) : (
