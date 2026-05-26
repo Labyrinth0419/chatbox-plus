@@ -127,7 +127,7 @@ function RouteComponent() {
     if (!currentSession) {
       return false
     }
-    NiceModal.show('session-settings', {
+    void NiceModal.show('session-settings', {
       session: currentSession,
     })
     return true
@@ -155,11 +155,16 @@ function RouteComponent() {
   }, [currentSession?.settings?.provider, currentSession?.settings?.modelId])
 
   return currentSession ? (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <Header session={currentSession} />
 
       {/* MessageList 设置 key，确保每个 session 对应新的 MessageList 实例 */}
-      <MessageList ref={messageListRef} key={`message-list${currentSessionId}`} currentSession={currentSession} />
+      <MessageList
+        ref={messageListRef}
+        key={`message-list${currentSessionId}`}
+        currentSession={currentSession}
+        className="flex-1"
+      />
 
       {/* <ScrollButtons /> */}
       <ErrorBoundary name="session-inputbox">

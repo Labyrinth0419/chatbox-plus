@@ -6,34 +6,115 @@
 import { SafeArea } from 'capacitor-plugin-safe-area'
 import { Keyboard } from '@capacitor/keyboard'
 
-SafeArea.getSafeAreaInsets().then(({ insets }) => {
+const root = document.documentElement
+let keyboardHeight = 0
+let viewportHeightBeforeKeyboard = window.innerHeight
+let isEditableFocused = false
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+}
+
+function setSafeAreaInsets(insets: Record<string, number>) {
   for (const [key, value] of Object.entries(insets)) {
-    document.documentElement.style.setProperty(`--mobile-safe-area-inset-${key}`, `${value}px`)
+    root.style.setProperty(`--mobile-safe-area-inset-${key}`, `${value}px`)
+  }
+}
+
+function setKeyboardOverlap(nextKeyboardHeight = keyboardHeight) {
+  keyboardHeight = nextKeyboardHeight
+
+  if (keyboardHeight <= 0) {
+    root.style.setProperty('--mobile-keyboard-height', '0px')
+    root.style.setProperty('--mobile-keyboard-overlap-bottom', '0px')
+    return
+  }
+
+  const visualViewport = window.visualViewport
+  const visualViewportOcclusion = visualViewport
+    ? Math.max(0, window.innerHeight - visualViewport.height - visualViewport.offsetTop)
+    : 0
+  const nativeResizeAmount = Math.max(0, viewportHeightBeforeKeyboard - window.innerHeight)
+  const overlapAfterNativeResize = Math.max(0, keyboardHeight - nativeResizeAmount)
+  const overlap = Math.round(Math.min(keyboardHeight, Math.max(visualViewportOcclusion, overlapAfterNativeResize)))
+
+  root.style.setProperty('--mobile-keyboard-height', `${Math.round(keyboardHeight)}px`)
+  root.style.setProperty('--mobile-keyboard-overlap-bottom', `${overlap}px`)
+}
+
+function refreshKeyboardOverlap() {
+  if (keyboardHeight > 0) {
+    setKeyboardOverlap()
+    return
+  }
+  if (!isEditableFocused) {
+    viewportHeightBeforeKeyboard = window.innerHeight
+  }
+}
+
+function scheduleKeyboardOverlapRefresh() {
+  window.requestAnimationFrame(refreshKeyboardOverlap)
+  window.setTimeout(refreshKeyboardOverlap, 80)
+  window.setTimeout(refreshKeyboardOverlap, 180)
+  window.setTimeout(refreshKeyboardOverlap, 320)
+}
+
+void SafeArea.getSafeAreaInsets().then(({ insets }) => {
+  setSafeAreaInsets(insets)
+})
+
+void SafeArea.getStatusBarHeight()
+
+void (async () => {
+  // when safe-area changed
+  await SafeArea.addListener('safeAreaChanged', (data) => {
+    if (keyboardHeight <= 0) {
+      setSafeAreaInsets(data.insets)
+    }
+  })
+})()
+
+void Keyboard.addListener('keyboardWillShow', (info) => {
+  root.dataset.mobileKeyboardVisible = 'true'
+  root.style.setProperty(`--mobile-safe-area-inset-bottom`, `0px`)
+  setKeyboardOverlap(info.keyboardHeight)
+  scheduleKeyboardOverlapRefresh()
+})
+
+void Keyboard.addListener('keyboardWillHide', () => {
+  keyboardHeight = 0
+  root.dataset.mobileKeyboardVisible = 'false'
+  setKeyboardOverlap(0)
+  void SafeArea.getSafeAreaInsets().then(({ insets }) => {
+    setSafeAreaInsets(insets)
+  })
+  window.setTimeout(() => {
+    viewportHeightBeforeKeyboard = window.innerHeight
+  }, 320)
+})
+
+window.addEventListener('focusin', (event) => {
+  if (!isEditableTarget(event.target)) {
+    return
+  }
+  isEditableFocused = true
+  if (keyboardHeight <= 0) {
+    viewportHeightBeforeKeyboard = window.innerHeight
   }
 })
 
-SafeArea.getStatusBarHeight().then(({ statusBarHeight }) => {
-  // console.log(statusBarHeight, 'statusbarHeight');
-})
-;(async () => {
-  // when safe-area changed
-  const eventListener = await SafeArea.addListener('safeAreaChanged', (data) => {
-    const { insets } = data
-    for (const [key, value] of Object.entries(insets)) {
-      document.documentElement.style.setProperty(`--mobile-safe-area-inset-${key}`, `${value}px`)
-    }
-  })
-  // eventListener.remove();
-})()
-
-Keyboard.addListener('keyboardWillShow', async (info) => {
-  document.documentElement.style.setProperty(`--mobile-safe-area-inset-bottom`, `0px`)
+window.addEventListener('focusout', () => {
+  isEditableFocused = false
+  if (keyboardHeight <= 0) {
+    window.setTimeout(() => {
+      viewportHeightBeforeKeyboard = window.innerHeight
+    }, 80)
+  }
 })
 
-Keyboard.addListener('keyboardWillHide', () => {
-  SafeArea.getSafeAreaInsets().then(({ insets }) => {
-    for (const [key, value] of Object.entries(insets)) {
-      document.documentElement.style.setProperty(`--mobile-safe-area-inset-${key}`, `${value}px`)
-    }
-  })
-})
+window.addEventListener('resize', refreshKeyboardOverlap)
+window.visualViewport?.addEventListener('resize', refreshKeyboardOverlap)
+window.visualViewport?.addEventListener('scroll', refreshKeyboardOverlap)

@@ -162,6 +162,15 @@ html[data-theme="light"] {
   padding-bottom: 0;
 }
 
+html[data-mobile-keyboard-visible="true"] #input-box-2024-02-22 {
+  padding-bottom: var(--mobile-keyboard-overlap-bottom, 0px) !important;
+  transition: padding-bottom 180ms ease-out;
+}
+
+html[data-mobile-keyboard-visible="true"] #input-box-2024-02-22 .disclaimer-safe-area {
+  display: none;
+}
+
 .ToolBar {
   /* 移动端异形屏的显示问题 */
   padding-top: env(safe-area-inset-top, 0px);
