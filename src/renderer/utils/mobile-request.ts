@@ -2,6 +2,71 @@ import { CapacitorHttp } from '@capacitor/core'
 import { createNativeReadableStream } from '@/native/stream-http'
 import { ApiError } from '../../shared/models/errors'
 
+interface CapacitorFormDataEntry {
+  key: string
+  value: string
+  type: 'base64File' | 'string'
+  contentType?: string
+  fileName?: string
+}
+
+function isFormDataBody(body: RequestInit['body']): body is FormData {
+  return typeof FormData !== 'undefined' && body instanceof FormData
+}
+
+function getBlobFileName(value: Blob, key: string): string {
+  if (typeof File !== 'undefined' && value instanceof File && value.name) {
+    return value.name
+  }
+  return `${key}.bin`
+}
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  const buffer = await blob.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  const chunkSize = 0x8000
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+  }
+
+  return btoa(binary)
+}
+
+function convertFormDataForCapacitor(formData: FormData): Promise<CapacitorFormDataEntry[]> {
+  const entries: Promise<CapacitorFormDataEntry>[] = []
+
+  formData.forEach((value, key) => {
+    if (typeof value === 'string') {
+      entries.push(
+        Promise.resolve({
+          key,
+          value,
+          type: 'string',
+        })
+      )
+      return
+    }
+
+    entries.push(
+      blobToBase64(value).then((base64) => ({
+        key,
+        value: base64,
+        type: 'base64File',
+        contentType: value.type || 'application/octet-stream',
+        fileName: getBlobFileName(value, key),
+      }))
+    )
+  })
+
+  return Promise.all(entries)
+}
+
+function createMultipartBoundary(): string {
+  return `----ChatboxFormBoundary${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`
+}
+
 export async function handleMobileRequest(
   url: string,
   method: string,
@@ -56,13 +121,30 @@ export async function handleMobileRequest(
     }
   }
 
-  const response = await CapacitorHttp.request({
-    url,
-    method,
-    headers: headerObj,
-    data: body,
-    responseType: 'text',
-  })
+  let response: Awaited<ReturnType<typeof CapacitorHttp.request>>
+  if (isFormDataBody(body)) {
+    const formDataHeaders = { ...headerObj }
+    delete formDataHeaders['content-type']
+    delete formDataHeaders['Content-Type']
+    formDataHeaders['Content-Type'] = `multipart/form-data; boundary=${createMultipartBoundary()}`
+
+    response = await CapacitorHttp.request({
+      url,
+      method,
+      headers: formDataHeaders,
+      data: await convertFormDataForCapacitor(body),
+      dataType: 'formData',
+      responseType: 'text',
+    })
+  } else {
+    response = await CapacitorHttp.request({
+      url,
+      method,
+      headers: headerObj,
+      data: body,
+      responseType: 'text',
+    })
+  }
 
   const rawData = typeof response.data === 'string' ? response.data : JSON.stringify(response.data)
   // Treat status 0 or < 200 as errors, in addition to >= 400
