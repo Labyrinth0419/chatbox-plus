@@ -49,7 +49,7 @@ import { initSettingsStore } from './stores/settingsStore'
 import('./setup/token_estimation_init')
 
 // 引入移动端安全区域代码，主要为了解决异形屏幕的问题
-if (CHATBOX_BUILD_TARGET === 'mobile_app' && CHATBOX_BUILD_PLATFORM === 'ios') {
+if (CHATBOX_BUILD_TARGET === 'mobile_app') {
   import('./setup/mobile_safe_area')
 }
 
@@ -69,8 +69,10 @@ async function initializeApp() {
   // 最后执行 storage 清理，清理不 block 进入UI
   import('./setup/storage_clear')
 
-  // 启动mcp服务器
-  import('./setup/mcp_bootstrap')
+  if (platform.type === 'desktop') {
+    // 启动mcp服务器
+    import('./setup/mcp_bootstrap')
+  }
 }
 
 // ==========渲染节点==============
