@@ -1,293 +1,92 @@
 <p align="right">
-  <a href="README.md">English</a> |
-  <a href="./doc/README-CN.md">简体中文</a>
+  <a href="./README.md">简体中文</a> |
+  <a href="./README.en.md">English</a>
 </p>
 
-This is the repository for Chatbox Plus, an unofficial modified fork of Chatbox Community Edition.
-Chatbox Plus is not affiliated with ChatboxAI or the upstream Chatbox project.
-This fork is distributed under the GPLv3 license.
+# Chatbox Plus
 
-Upstream source: [chatboxai/chatbox](https://github.com/chatboxai/chatbox)
+Chatbox Plus 是基于 [Chatbox Community Edition](https://github.com/chatboxai/chatbox) 的非官方增强版 fork。它延续 Chatbox 本地优先、跨平台、多模型客户端的基础能力，并在模型供应商、会话体验、工具集成、移动端构建和调试便利性等方向加入扩展。
 
-## Downloads
+本项目与 ChatboxAI 或上游 Chatbox 项目无隶属关系。项目遵循 [GPLv3 License](./LICENSE) 发布。
 
-Chatbox Plus builds should be downloaded from this fork's [GitHub Releases](https://github.com/Labyrinth0419/chatbox-plus/releases) when available. If no release has been published yet, build from source with the commands below.
+## 文档索引
 
-Official Chatbox download links, mobile store listings, paid services, and account/license services belong to the upstream project and are not part of Chatbox Plus.
+- 原 Chatbox README 已归档到：[docs/archived-chatbox-readme.md](./docs/archived-chatbox-readme.md)
+- 上游项目仓库：[chatboxai/chatbox](https://github.com/chatboxai/chatbox)
+- 常见问题：[doc/FAQ-CN.md](./doc/FAQ-CN.md)
+- 技术文档：[docs/](./docs/)
 
-## Quick Start
+## Chatbox Plus 的扩展功能
 
-### For End Users
-1. Download the appropriate installer for your platform from the [Chatbox Plus releases page](https://github.com/Labyrinth0419/chatbox-plus/releases), or build from source if no release is available yet
-2. Install and launch Chatbox Plus
-3. Configure your AI provider (OpenAI, Claude, etc.) in settings
-4. Start chatting!
+Chatbox Plus 在上游 Community Edition 的基础上，重点加入和维护以下扩展：
 
-### System Requirements
+- **更清晰的模型供应商体系**：统一内置供应商、OpenAI 兼容供应商、自定义供应商和模型元数据读取链路，降低新增供应商和维护模型能力的成本。
+- **模型能力管理增强**：支持保存和合并模型的视觉、工具调用、推理、联网搜索等能力，避免用户配置被运行时或 registry 数据覆盖。
+- **OpenAI 兼容模型适配改进**：面向第三方 OpenAI-compatible 服务优化模型列表、Base URL、API Path、stream 和视觉输入等使用场景。
+- **视觉输入链路增强**：改进图片上传、存储、模型消息转换和错误暴露，避免图片读取失败时被静默降级成纯文本请求。
+- **移动端构建与存储适配**：维护 Android/Capacitor 构建链路，并针对移动端 SQLite 存储、图片 blob、文件解析限制等场景做兼容。
+- **本地优先与自带 Key 使用方式**：默认由用户配置自己的模型服务和 API Key，不依赖上游商业账号、订阅或 License 服务。
+- **开发与调试便利性**：补充模型注册表、供应商契约、消息转换、移动端请求等测试覆盖，便于定位模型能力、图片输入、工具调用相关问题。
 
-| Platform | Minimum Version | Architecture |
-|----------|----------------|--------------|
-| Windows | Windows 10 | x64 |
-| macOS | macOS 11 (Big Sur) | Intel/Apple Silicon |
-| Linux | Ubuntu 20.04+ / AppImage supported distros | x64 |
+## 下载
 
----
-<div align="center" markdown="1">
-  <a href="https://go.warp.dev/chatbox">
-    <img alt="Warp sponsorship" width="400" src="https://raw.githubusercontent.com/warpdotdev/brand-assets/refs/heads/main/Github/Sponsor/Warp-Github-LG-02.png">
-  </a>
+构建产物会发布在本 fork 的 [GitHub Releases](https://github.com/Labyrinth0419/chatbox-plus/releases)。如果当前没有可用 release，可以从源码构建。
 
-### [Warp, built for coding with multiple AI agents.](https://go.warp.dev/chatbox)
-[Available for MacOS, Linux, & Windows](https://go.warp.dev/chatbox)<br>
-</div>
+上游 Chatbox 的官方下载链接、移动端商店页面、付费服务、账号和 License 服务不属于 Chatbox Plus。
 
-<hr>
+## 快速开始
 
-<h1 align="center">
-<img src='./doc/statics/icon.png' width='30'>
-<span>
-    Chatbox Plus
-    <span style="font-size:8px; font-weight: normal;">(GPLv3 Fork)</span>
-</span>
-</h1>
-<p align="center">
-    <em>A GPLv3 desktop client for ChatGPT, Claude and other LLMs, based on Chatbox Community Edition.</em>
-</p>
+### 环境要求
 
-<p align="center">
-<a href="https://github.com/Labyrinth0419/chatbox-plus/releases" target="_blank">
-<img alt="macOS" src="https://img.shields.io/badge/-macOS-black?style=flat-square&logo=apple&logoColor=white" />
-</a>
-<a href="https://github.com/Labyrinth0419/chatbox-plus/releases" target="_blank">
-<img alt="Windows" src="https://img.shields.io/badge/-Windows-blue?style=flat-square&logo=windows&logoColor=white" />
-</a>
-<a href="https://github.com/Labyrinth0419/chatbox-plus/releases" target="_blank">
-<img alt="Linux" src="https://img.shields.io/badge/-Linux-yellow?style=flat-square&logo=linux&logoColor=white" />
-</a>
-<a href="https://github.com/Labyrinth0419/chatbox-plus/releases" target="_blank">
-<img alt="Downloads" src="https://img.shields.io/github/downloads/Labyrinth0419/chatbox-plus/total.svg?style=flat" />
-</a>
-<a href="#features">
-<img alt="Privacy" src="https://img.shields.io/badge/-Local%20First-green?style=flat-square&logo=shield&logoColor=white" />
-</a>
-</p>
+- Node.js 20.x 到 22.x
+- pnpm 10.x 或更高版本
+- Git
 
-<a href="./doc/statics/snapshot_light.png">
-<img src="./doc/statics/snapshot_light.png" width="400"/>
-</a>
-<a href="./doc/statics/snapshot_dark.png">
-<img src="./doc/statics/snapshot_dark.png" width="400"/>
-</a>
+### 开发运行
 
-<!-- <table>
-<tr>
-<td>
-<img src="./dec/../doc/demo_mobile_1.png" alt="App Screenshot" style="box-shadow: 2px 2px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 8px; height: 300px" />
-</td>
-<td>
-<img src="./dec/../doc/demo_mobile_2.png" alt="App Screenshot" style="box-shadow: 2px 2px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 8px; height: 300px" />
-</td>
-</tr>
-</table> -->
-
-## Features
-
-### 🤖 AI Model Support
--   **Support for Multiple LLM Providers**  
-    :gear: Seamlessly integrate with a variety of cutting-edge language models:
-    -   OpenAI (ChatGPT)
-    -   Azure OpenAI
-    -   Claude
-    -   Google Gemini Pro
-    -   Ollama (enable access to local models like llama2, Mistral, Mixtral, codellama, vicuna, yi, and solar)
-    -   ChatGLM-6B
-
--   **Image Generation with Dall-E-3**  
-    :art: Create the images of your imagination with Dall-E-3.
-
--   **Enhanced Prompting**  
-    :speech_balloon: Advanced prompting features to refine and focus your queries for better responses.
-
-### 🖥️ User Experience
--   **Local Data Storage**  
-    :floppy_disk: Your data remains on your device, ensuring it never gets lost and maintains your privacy.
-
--   **No-Deployment Installation Packages**  
-    :package: Get started quickly with downloadable installation packages. No complex setup necessary!
-
--   **Ergonomic UI & Dark Theme**  
-    :new_moon: A user-friendly interface with a night mode option for reduced eye strain during extended use.
-
--   **Keyboard Shortcuts**  
-    :keyboard: Stay productive with shortcuts that speed up your workflow.
-
--   **Streaming Reply**  
-    :arrow_forward: Provide rapid responses to your interactions with immediate, progressive replies.
-
-### 📄 Content & Formatting
--   **Markdown, Latex & Code Highlighting**  
-    :scroll: Generate messages with the full power of Markdown and Latex formatting, coupled with syntax highlighting for various programming languages, enhancing readability and presentation.
-
--   **Prompt Library & Message Quoting**  
-    :books: Save and organize prompts for reuse, and quote messages for context in discussions.
-
-### 👥 Collaboration & Sharing
--   **Team Collaboration**  
-    :busts_in_silhouette: Collaborate with ease and share OpenAI API resources among your team. [Learn More](./team-sharing/README.md)
-
-### 🌐 Platform Availability
--   **Cross-Platform Desktop**  
-    :computer: Chatbox is ready for Windows, Mac, and Linux users.
-
--   **Web Version**  
-    :globe_with_meridians: Use the web application on any device with a browser, anywhere.
-
--   **Mobile Apps**  
-    :phone: Native iOS and Android applications for on-the-go access.
-
-### 🌍 Localization
--   **Multilingual Support**  
-    :earth_americas: Catering to a global audience by offering support in multiple languages:
-    -   English
-    -   简体中文 (Simplified Chinese)
-    -   繁體中文 (Traditional Chinese)
-    -   日本語 (Japanese)
-    -   한국어 (Korean)
-    -   Français (French)
-    -   Deutsch (German)
-    -   Русский (Russian)
-    -   Español (Spanish)
-
-### ✨ More Features
--   **And More...**  
-    :sparkles: Constantly enhancing the experience with new features!
-
-## FAQ
-
--   [Frequently Asked Questions](./doc/FAQ.md)
-
-## About This Fork
-
-Chatbox Plus keeps the local-first desktop AI client experience from Chatbox Community Edition while removing upstream account, subscription, and bundled commercial-service dependencies. Users configure their own model providers and API keys.
-
-This fork preserves GPLv3 licensing and keeps source code, build scripts, and modification history available in this repository.
-
-## How to Contribute
-
-We welcome contributions from the community. Here's how you can help make Chatbox Plus better:
-
-### 🐛 Reporting Issues
-- Use [GitHub Issues](https://github.com/Labyrinth0419/chatbox-plus/issues) to report bugs or request features
-- Before creating a new issue, please search existing issues to avoid duplicates
-- Provide detailed information including steps to reproduce, expected behavior, and screenshots if applicable
-
-### 🔧 Pull Requests
-1. Fork the repository and create your branch from `main`
-2. Make your changes and ensure the code follows our coding standards
-3. Test your changes thoroughly
-4. Update documentation if needed
-5. Submit a pull request with a clear description of the changes
-
-### 🌍 Translations
-Help make Chatbox Plus accessible to more people by contributing translations:
-- Translation files are located in the `src/locales` directory
-- Follow the existing translation format
-- Submit a PR with your translation improvements
-
-### 📖 Documentation
-- Improve README, API documentation, or user guides
-- Fix typos or clarify unclear instructions
-- Add examples and tutorials
-
-### 🌟 Other Ways to Contribute
-- Star the repository to show your support
-- Share Chatbox Plus with others
-- Answer questions in [GitHub Discussions](https://github.com/Labyrinth0419/chatbox-plus/discussions) if discussions are enabled
-- Provide feedback and suggestions
-
-**Thank you for contributing! 🙏**
-
-## Development
-
-### Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Node.js** (v20.x – v22.x) - [Download here](https://nodejs.org/)
-- **pnpm** (v10.x or later) - Install via `corepack enable && corepack prepare pnpm@latest --activate`
-- **Git** - [Download here](https://git-scm.com/)
-
-### Quick Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Labyrinth0419/chatbox-plus.git
-   cd chatbox-plus
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Start development server**
-   ```bash
-   pnpm run dev
-   ```
-   The application will start in development mode with hot-reload enabled.
-
-### Build Commands
-
-| Command | Description |
-|---------|-------------|
-| `pnpm run dev` | Start development server with hot-reload |
-| `pnpm run package` | Build and package for current platform |
-| `pnpm run package:all` | Build and package for all platforms |
-| `pnpm run build` | Build for production without packaging |
-| `pnpm run lint` | Run Biome to check code quality |
-| `pnpm run test` | Run Vitest test suite |
-
-### Project Structure
-
-```
-chatbox-plus/
-├── src/
-│   ├── main/               # Electron main process
-│   ├── renderer/           # React renderer (UI)
-│   ├── preload/            # Electron preload scripts
-│   └── shared/             # Shared utilities
-├── doc/                    # Documentation and assets
-├── resources/              # App resources and icons
-├── team-sharing/           # Team collaboration features
-└── package.json            # Project configuration
+```bash
+git clone https://github.com/Labyrinth0419/chatbox-plus.git
+cd chatbox-plus
+pnpm install
+pnpm run dev
 ```
 
-### Development Tips
+### 常用命令
 
-- Use `pnpm run lint` before committing to ensure code quality
-- Follow the existing code style and patterns
-- Test your changes on both light and dark themes
-- Ensure cross-platform compatibility when making UI changes
+| 命令 | 说明 |
+| --- | --- |
+| `pnpm run dev` | 启动桌面端开发环境 |
+| `pnpm run build` | 生产构建 |
+| `pnpm run package` | 为当前平台打包 |
+| `pnpm run package:all` | 为所有支持平台打包 |
+| `pnpm run mobile:sync:android` | 同步 Android 工程 |
+| `pnpm run test` | 运行测试 |
+| `pnpm run lint` | 运行代码检查 |
 
-### Troubleshooting
+## 平台支持
 
-**Issue**: `pnpm install` fails
-- **Solution**: Ensure you're using pnpm (not npm or yarn) and Node.js version is within the required range. Run `corepack enable` if pnpm is not found.
+Chatbox Plus 主要面向以下平台维护：
 
-**Issue**: Build fails on Windows
-- **Solution**: Run `pnpm config set script-shell "C:\\Program Files\\git\\bin\\bash.exe"` if using Git Bash
+- Windows
+- macOS
+- Linux
+- Android
+- Web 构建
 
-**Issue**: Changes not reflecting in development
-- **Solution**: Stop the dev server, delete `node_modules/.vite`, and restart
+不同平台的可用能力可能存在差异，尤其是本地文件解析、系统级集成、移动端存储和安装包分发。
 
-## Star History
+## 贡献
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Labyrinth0419/chatbox-plus&type=Date)](https://star-history.com/#Labyrinth0419/chatbox-plus&Date)
+欢迎通过 Issue 和 Pull Request 参与项目。提交代码前建议至少运行和改动相关的测试，并保持改动范围清晰。
 
-## Contact
+适合贡献的方向包括：
 
-Use [GitHub Issues](https://github.com/Labyrinth0419/chatbox-plus/issues) for project discussion and support.
+- 修复模型供应商兼容问题
+- 补充模型能力元数据
+- 改进移动端体验
+- 修复视觉输入、工具调用、文件解析等会话链路问题
+- 完善文档和测试
 
 ## License
 
-[LICENSE](./LICENSE)
+Chatbox Plus 遵循 [GPLv3 License](./LICENSE)。本项目是 Chatbox Community Edition 的 GPLv3 fork，修改源码、构建脚本和相关文档均在本仓库中维护。
