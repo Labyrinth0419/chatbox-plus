@@ -22,6 +22,8 @@ Chatbox Plus 在上游 Community Edition 的基础上，重点加入和维护以
 
 - **更清晰的模型供应商体系**：统一内置供应商、OpenAI 兼容供应商、自定义供应商和模型元数据读取链路，降低新增供应商和维护模型能力的成本。
 - **模型能力管理增强**：支持保存和合并模型的视觉、工具调用、推理、联网搜索等能力，避免用户配置被运行时或 registry 数据覆盖。
+- **内置 AI 工具与工具设置**：提供可开关的工具设置页，并内置 `curl_request`、JSON 查询、文本转换、时间、HTML 提取、URL 处理和 CSV 预览等轻量工具，帮助支持 tool use 的模型完成确定性操作。
+- **联网搜索兼容性改进**：维护 Bing、DuckDuckGo、Tavily、BoCha、Querit 等搜索入口，支持免费搜索可用性检查和官方代理选项，并针对 Android 原生 HTTP 请求调整 Bing 搜索请求头。
 - **OpenAI 兼容模型适配改进**：面向第三方 OpenAI-compatible 服务优化模型列表、Base URL、API Path、stream 和视觉输入等使用场景。
 - **视觉输入链路增强**：改进图片上传、存储、模型消息转换和错误暴露，避免图片读取失败时被静默降级成纯文本请求。
 - **移动端构建与存储适配**：维护 Android/Capacitor 构建链路，并针对移动端 SQLite 存储、图片 blob、文件解析限制等场景做兼容。
@@ -60,6 +62,7 @@ pnpm run dev
 | `pnpm run package` | 为当前平台打包 |
 | `pnpm run package:all` | 为所有支持平台打包 |
 | `pnpm run mobile:sync:android` | 同步 Android 工程 |
+| `pnpm run mobile:android:debug` | 构建 Android debug APK |
 | `pnpm run test` | 运行测试 |
 | `pnpm run lint` | 运行代码检查 |
 

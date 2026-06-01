@@ -22,6 +22,8 @@ Chatbox Plus maintains the upstream Community Edition base and adds the followin
 
 - **Clearer provider architecture**: unifies built-in providers, OpenAI-compatible providers, custom providers, and model metadata resolution.
 - **Enhanced model capability management**: preserves and merges saved model capabilities such as vision, tool use, reasoning, and web search instead of overwriting user configuration.
+- **Built-in AI tools and tool settings**: adds a configurable tool settings area and lightweight built-in tools such as `curl_request`, JSON querying, text transforms, date/time, HTML extraction, URL handling, and CSV previews for models that support tool use.
+- **Web search compatibility improvements**: maintains Bing, DuckDuckGo, Tavily, BoCha, and Querit search integrations, including availability checks, official proxy options for free providers, and Android-specific Bing request header fixes.
 - **Improved OpenAI-compatible support**: better behavior for third-party OpenAI-compatible services, including model lists, Base URL, API Path, streaming, and vision input.
 - **More reliable vision input flow**: improves image upload, storage, model-message conversion, and error reporting so unreadable images are not silently sent as text-only prompts.
 - **Mobile build and storage work**: maintains Android/Capacitor build support with mobile SQLite storage and image blob compatibility considerations.
@@ -60,6 +62,7 @@ pnpm run dev
 | `pnpm run package` | Package for the current platform |
 | `pnpm run package:all` | Package for all supported platforms |
 | `pnpm run mobile:sync:android` | Sync the Android project |
+| `pnpm run mobile:android:debug` | Build an Android debug APK |
 | `pnpm run test` | Run tests |
 | `pnpm run lint` | Run lint checks |
 
