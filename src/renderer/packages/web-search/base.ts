@@ -4,6 +4,8 @@ import { type FetchOptions, ofetch } from 'ofetch'
 import platform from '@/platform'
 
 const CHATBOX_OFFICIAL_PROXY_URL = 'https://cors-proxy.chatboxai.app/proxy-api/completions'
+const MOBILE_WEB_SEARCH_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
 
 type WebSearchFetchOptions = FetchOptions & {
   useOfficialProxy?: boolean
@@ -52,7 +54,6 @@ abstract class WebSearch {
   async fetch(url: string, options: WebSearchFetchOptions) {
     const targetUrl = appendQuery(url, options.query)
     const requestUrl = options.useOfficialProxy ? CHATBOX_OFFICIAL_PROXY_URL : url
-    const { origin } = new URL(requestUrl)
     const headers = {
       ...toPlainHeaders(options.headers),
       ...(options.useOfficialProxy
@@ -69,11 +70,10 @@ abstract class WebSearch {
         url: requestUrl,
         method: options.method,
         headers: {
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
           ...headers,
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-          origin,
-          referer: origin,
+          'User-Agent': MOBILE_WEB_SEARCH_USER_AGENT,
         },
         params: options.useOfficialProxy ? undefined : options.query,
         data: options.body,
