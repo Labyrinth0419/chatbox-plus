@@ -48,7 +48,7 @@ import { isContainRenderableCode, MessageArtifact } from '../Artifact'
 import { AssistantAvatar, SystemAvatar, UserAvatar } from '../common/Avatar'
 import { ScalableIcon } from '../common/ScalableIcon'
 import Loading from '../icons/Loading'
-import { ReasoningContentUI, ToolCallPartUI, WebSearchGroupUI } from '../message-parts/ToolCallPartUI'
+import { ReasoningContentUI, ToolCallGroupUI, ToolCallPartUI } from '../message-parts/ToolCallPartUI'
 import { MessageAttachmentGrid } from './MessageAttachmentGrid'
 import MessageErrTips from './MessageErrTips'
 import MessageStatuses from './MessageLoading'
@@ -254,14 +254,14 @@ const _Message: FC<Props> = (props) => {
   const contentParts = msg.contentParts || []
 
   const groupedContentParts = useMemo(() => {
-    const groups: Array<{ type: 'web_search_group'; parts: MessageToolCallPart[] } | (typeof contentParts)[number]> = []
+    const groups: Array<{ type: 'tool_call_group'; parts: MessageToolCallPart[] } | (typeof contentParts)[number]> = []
     for (const item of contentParts) {
-      if (item.type === 'tool-call' && (item as MessageToolCallPart).toolName === 'web_search') {
+      if (item.type === 'tool-call') {
         const last = groups[groups.length - 1]
-        if (last && 'parts' in last && last.type === 'web_search_group') {
+        if (last && 'parts' in last && last.type === 'tool_call_group') {
           last.parts.push(item as MessageToolCallPart)
         } else {
-          groups.push({ type: 'web_search_group', parts: [item as MessageToolCallPart] })
+          groups.push({ type: 'tool_call_group', parts: [item as MessageToolCallPart] })
         }
       } else {
         groups.push(item)
@@ -401,8 +401,12 @@ const _Message: FC<Props> = (props) => {
           {groupedContentParts.length > 0 && (
             <div>
               {groupedContentParts.map((item, index) =>
-                'parts' in item && item.type === 'web_search_group' ? (
-                  <WebSearchGroupUI key={`web-search-group-${msg.id}-${index}`} parts={item.parts} />
+                'parts' in item && item.type === 'tool_call_group' ? (
+                  item.parts.length > 1 ? (
+                    <ToolCallGroupUI key={`tool-call-group-${msg.id}-${index}`} parts={item.parts} />
+                  ) : (
+                    <ToolCallPartUI key={item.parts[0].toolCallId} part={item.parts[0]} />
+                  )
                 ) : item.type === 'reasoning' ? (
                   <div key={`reasoning-${msg.id}-${index}`}>
                     <ReasoningContentUI message={msg} part={item} onCopyReasoningContent={onCopyReasoningContent} />
@@ -495,9 +499,7 @@ const _Message: FC<Props> = (props) => {
           )}
         </Box>
         {props.sessionType === 'picture' && contentParts.filter((p) => p.type === 'image').length > 0 && (
-          <PictureGallery
-            pictures={contentParts.filter((p) => p.type === 'image')}
-          />
+          <PictureGallery pictures={contentParts.filter((p) => p.type === 'image')} />
         )}
         <MessageErrTips
           msg={msg}

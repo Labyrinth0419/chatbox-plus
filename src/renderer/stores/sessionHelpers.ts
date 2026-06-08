@@ -509,6 +509,7 @@ export function initEmptyChatSession(): Omit<Session, 'id'> {
       maxContextMessageCount: settings.maxContextMessageCount ?? Number.MAX_SAFE_INTEGER,
       temperature: settings.temperature || undefined,
       topP: settings.topP || undefined,
+      providerOptions: settings.providerOptions,
       ...(settings.defaultChatModel
         ? {
             provider: settings.defaultChatModel.provider,

@@ -1,6 +1,6 @@
 import { ActionIcon, Box, Code, Collapse, Group, Paper, Stack, Text, UnstyledButton } from '@mantine/core'
 import { ChatboxAIAPIError } from '@shared/models/errors'
-import { type Message, type MessageReasoningPart, type MessageToolCallPart } from '@shared/types'
+import type { Message, MessageReasoningPart, MessageToolCallPart } from '@shared/types'
 import {
   IconBulb,
   IconCheck,
@@ -16,11 +16,12 @@ import {
   IconFileSearch,
   IconLoader,
   IconTerminal,
+  IconTools,
   IconWorld,
   IconX,
 } from '@tabler/icons-react'
 import clsx from 'clsx'
-import { type FC, useCallback, useEffect, useRef, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ChatboxAIErrorMessage } from '@/components/common/ChatboxAIErrorMessage'
@@ -268,9 +269,7 @@ export const WebSearchGroupUI: FC<{ parts: MessageToolCallPart[] }> = ({ parts }
   return (
     <Stack gap={4} mb={4}>
       <UnstyledButton
-        onClick={
-          resultCount > 0 || queries.length > 0 || hasError ? () => setExpanded((prev) => !prev) : undefined
-        }
+        onClick={resultCount > 0 || queries.length > 0 || hasError ? () => setExpanded((prev) => !prev) : undefined}
       >
         <Group
           gap={4}
@@ -332,11 +331,7 @@ export const WebSearchGroupUI: FC<{ parts: MessageToolCallPart[] }> = ({ parts }
         </div>
       )}
       {expanded && errorPart && (
-        <Box
-          ml={4}
-          pl="sm"
-          style={{ borderLeft: '1px solid var(--chatbox-tint-error)' }}
-        >
+        <Box ml={4} pl="sm" style={{ borderLeft: '1px solid var(--chatbox-tint-error)' }}>
           <ToolCallErrorDetails part={errorPart} />
         </Box>
       )}
@@ -474,6 +469,137 @@ const GeneralToolCallUI: FC<{ part: MessageToolCallPart }> = ({ part }) => {
                   </Text>
                   <Code block>{JSON.stringify(part.result, null, 2)}</Code>
                 </Box>
+              )
+            )}
+          </Stack>
+        </Box>
+      </Collapse>
+    </Stack>
+  )
+}
+
+// ─── Tool Call Group ────────────────────────────────────────────────
+
+type ToolCallGroupDetail =
+  | { type: 'web_search_group'; parts: MessageToolCallPart[] }
+  | { type: 'tool-call'; part: MessageToolCallPart }
+
+function groupToolCallDetails(parts: MessageToolCallPart[]): ToolCallGroupDetail[] {
+  const groups: ToolCallGroupDetail[] = []
+  for (const part of parts) {
+    if (part.toolName === 'web_search') {
+      const last = groups[groups.length - 1]
+      if (last?.type === 'web_search_group') {
+        last.parts.push(part)
+      } else {
+        groups.push({ type: 'web_search_group', parts: [part] })
+      }
+    } else {
+      groups.push({ type: 'tool-call', part })
+    }
+  }
+  return groups
+}
+
+export const ToolCallGroupUI: FC<{ parts: MessageToolCallPart[] }> = ({ parts }) => {
+  const { t } = useTranslation()
+  const runningCount = parts.filter((p) => p.state === 'call').length
+  const failedCount = parts.filter((p) => p.state === 'error').length
+  const completedCount = parts.filter((p) => p.state === 'result').length
+  const hasRunning = runningCount > 0
+  const hasError = failedCount > 0
+  const [expanded, setExpanded] = useAutoExpandOnError(hasError)
+  const detailGroups = useMemo(() => groupToolCallDetails(parts), [parts])
+
+  const title = hasRunning ? t('Using tools') : hasError ? t('Tool calls failed') : t('Tool calls completed')
+  const summary = [
+    completedCount > 0 ? t('{{count}} completed', { count: completedCount }) : undefined,
+    runningCount > 0 ? t('{{count}} running', { count: runningCount }) : undefined,
+    failedCount > 0 ? t('{{count}} failed', { count: failedCount }) : undefined,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  const iconColor = hasRunning
+    ? 'var(--chatbox-tint-brand)'
+    : hasError
+      ? 'var(--chatbox-tint-error)'
+      : 'var(--chatbox-tint-success)'
+
+  const bgColor = hasError
+    ? 'color-mix(in srgb, var(--chatbox-tint-error) 8%, transparent)'
+    : expanded
+      ? 'var(--chatbox-background-brand-secondary)'
+      : 'var(--chatbox-background-gray-secondary)'
+  const border = hasError
+    ? '1px solid var(--chatbox-border-error)'
+    : expanded
+      ? '1px solid var(--chatbox-border-brand)'
+      : 'none'
+
+  return (
+    <Stack gap={6} mb="xs">
+      <UnstyledButton onClick={() => setExpanded((prev) => !prev)}>
+        <Group
+          gap={6}
+          px={8}
+          py={8}
+          style={{
+            borderRadius: 'var(--mantine-radius-md)',
+            backgroundColor: bgColor,
+            border,
+            display: 'inline-flex',
+          }}
+        >
+          <IconTools size={16} color={iconColor} style={{ flexShrink: 0 }} />
+          <Text size="sm" fw={600} c={hasError ? 'chatbox-error' : 'chatbox-secondary'} lh={1}>
+            {title}
+          </Text>
+          <Text size="xs" c="chatbox-tertiary" lh={1}>
+            {t('{{count}} tool calls', { count: parts.length })}
+          </Text>
+          {summary && (
+            <Text size="xs" c="chatbox-tertiary" lh={1}>
+              {summary}
+            </Text>
+          )}
+          {hasRunning ? (
+            <IconLoader
+              size={14}
+              className="animate-spin"
+              color="var(--chatbox-tint-brand)"
+              style={{ flexShrink: 0 }}
+            />
+          ) : hasError ? (
+            <IconCircleXFilled size={14} color="var(--chatbox-tint-error)" style={{ flexShrink: 0 }} />
+          ) : (
+            <IconCheck size={14} color="var(--chatbox-tint-success)" style={{ flexShrink: 0 }} />
+          )}
+          <IconChevronDown
+            size={13}
+            color="var(--chatbox-tertiary)"
+            style={{ flexShrink: 0 }}
+            className={clsx('transition-transform', expanded ? 'rotate-180' : '')}
+          />
+        </Group>
+      </UnstyledButton>
+      <Collapse in={expanded}>
+        <Box
+          ml={4}
+          pl="sm"
+          style={{
+            borderLeft: `2px solid ${hasError ? 'var(--chatbox-tint-error)' : 'var(--chatbox-tint-success)'}`,
+          }}
+        >
+          <Stack gap={4}>
+            {detailGroups.map((item) =>
+              item.type === 'web_search_group' ? (
+                <WebSearchGroupUI
+                  key={`web-search-group-${item.parts.map((part) => part.toolCallId).join(':')}`}
+                  parts={item.parts}
+                />
+              ) : (
+                <ToolCallPartUI key={item.part.toolCallId} part={item.part} />
               )
             )}
           </Stack>

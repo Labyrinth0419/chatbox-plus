@@ -32,15 +32,18 @@ import { IconInfoCircle, IconTrash, IconUpload } from '@tabler/icons-react'
 import { pick } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AssistantAvatar } from '@/components/common/Avatar'
 import { AdaptiveModal } from '@/components/common/AdaptiveModal'
+import { AssistantAvatar } from '@/components/common/Avatar'
 import LazyNumberInput from '@/components/common/LazyNumberInput'
 import MaxContextMessageCountSlider from '@/components/common/MaxContextMessageCountSlider'
+import OpenAIReasoningEffortControl, {
+  type OpenAIReasoningEffort,
+} from '@/components/common/OpenAIReasoningEffortControl'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
+import SegmentedControl from '@/components/common/SegmentedControl'
 import SliderWithInput from '@/components/common/SliderWithInput'
 import { handleImageInputAndSave, ImageInStorage } from '@/components/Image'
 import ImageStyleSelect from '@/components/ImageStyleSelect'
-import { ScalableIcon } from '@/components/common/ScalableIcon'
-import SegmentedControl from '@/components/common/SegmentedControl'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { trackingEvent } from '@/packages/event'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
@@ -604,63 +607,28 @@ function OpenAIProviderConfig({
   settings: SessionSettings
   onSettingsChange: (data: Session['settings']) => void
 }) {
-  const { t } = useTranslation()
   const providerOptions = settings?.providerOptions?.openai
 
-  // Memoize options to prevent recreation on every render
-  const reasoningEffortOptions = useMemo(
-    () => [
-      { label: t('Disabled'), value: 'null' },
-      { label: t('Low'), value: 'low' },
-      { label: t('Medium'), value: 'medium' },
-      { label: t('High'), value: 'high' },
-    ],
-    [t]
-  )
-
   const handleReasoningEffortChange = useCallback(
-    (value: string) => {
-      const reasoningEffort = value === 'null' ? undefined : (value as 'low' | 'medium' | 'high')
+    (reasoningEffort?: OpenAIReasoningEffort) => {
+      const openaiOptions = { ...(settings?.providerOptions?.openai || {}) }
+      if (reasoningEffort) {
+        openaiOptions.reasoningEffort = reasoningEffort
+      } else {
+        delete openaiOptions.reasoningEffort
+      }
       onSettingsChange({
         providerOptions: {
-          openai: { reasoningEffort },
+          ...(settings?.providerOptions || {}),
+          openai: openaiOptions,
         },
       })
     },
-    [onSettingsChange]
+    [onSettingsChange, settings?.providerOptions]
   )
 
-  // Simplify value calculation to avoid instability
-  const currentValue = useMemo(() => {
-    const effort = providerOptions?.reasoningEffort
-    return effort === undefined ? 'null' : effort
-  }, [providerOptions?.reasoningEffort])
-
   return (
-    <Stack gap="md">
-      <Flex align="center" gap="xs">
-        <Text size="sm" fw="600">
-          {t('Thinking Effort')}
-        </Text>
-        <Tooltip
-          label={t('Thinking Effort only works for OpenAI o-series models')}
-          withArrow={true}
-          maw={320}
-          className="!whitespace-normal"
-          zIndex={3000}
-          events={{ hover: true, focus: true, touch: true }}
-        >
-          <ScalableIcon icon={IconInfoCircle} size={20} className="text-chatbox-tint-tertiary" />
-        </Tooltip>
-      </Flex>
-
-      <SegmentedControl
-        key="reasoning-effort-control"
-        value={currentValue}
-        onChange={handleReasoningEffortChange}
-        data={reasoningEffortOptions}
-      />
-    </Stack>
+    <OpenAIReasoningEffortControl value={providerOptions?.reasoningEffort} onChange={handleReasoningEffortChange} />
   )
 }
 
@@ -746,6 +714,8 @@ export function ChatConfig({
 }) {
   const { t } = useTranslation()
   const globalSettingsStream = useSettingsStore((s) => s.stream)
+  const isOpenAIProvider =
+    settings?.provider === ModelProviderEnum.OpenAI || settings?.provider === ModelProviderEnum.OpenAIResponses
 
   return (
     <Stack gap="md">
@@ -845,9 +815,7 @@ export function ChatConfig({
       {settings?.provider === ModelProviderEnum.Claude && (
         <ClaudeProviderConfig settings={settings} onSettingsChange={onSettingsChange} />
       )}
-      {settings?.provider === ModelProviderEnum.OpenAI && (
-        <OpenAIProviderConfig settings={settings} onSettingsChange={onSettingsChange} />
-      )}
+      {settings && isOpenAIProvider && <OpenAIProviderConfig settings={settings} onSettingsChange={onSettingsChange} />}
       {settings?.provider === ModelProviderEnum.Gemini && (
         <GoogleProviderConfig settings={settings} onSettingsChange={onSettingsChange} />
       )}

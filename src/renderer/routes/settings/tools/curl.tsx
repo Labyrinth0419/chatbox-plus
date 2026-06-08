@@ -1,6 +1,6 @@
 import { Button, Flex, NumberInput, Stack, Switch, Text, Title } from '@mantine/core'
 import type { ToolSettings } from '@shared/types'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { executeCurlRequest } from '@/packages/model-calls/toolsets/curl'
@@ -40,12 +40,7 @@ export function RouteComponent() {
 
   return (
     <Stack p="md" gap="lg" maw={520}>
-      <Flex align="center" justify="space-between" gap="md">
-        <Title order={5}>{t('Curl Request')}</Title>
-        <Button component={Link} to="/settings/tools" variant="subtle" size="xs" color="chatbox-gray">
-          {t('Back')}
-        </Button>
-      </Flex>
+      <Title order={5}>{t('Curl Request')}</Title>
 
       <Stack gap="xs">
         <Switch

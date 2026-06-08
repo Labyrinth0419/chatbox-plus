@@ -26,6 +26,7 @@ import {
   IconAlertCircle,
   IconArrowBackUp,
   IconArrowUp,
+  IconBulb,
   IconChevronRight,
   IconCirclePlus,
   IconFilePencil,
@@ -83,6 +84,8 @@ import {
   type KnowledgeBase,
   type Message,
   ModelProviderEnum,
+  ModelProviderType,
+  type ProviderOptions,
   type SessionType,
   type ShortcutSendValue,
 } from '../../../shared/types'
@@ -91,6 +94,7 @@ import * as sessionHelpers from '../../stores/sessionHelpers'
 import * as toastActions from '../../stores/toastActions'
 import { CompactionStatus } from '../chat/CompactionStatus'
 import { CompressionModal } from '../common/CompressionModal'
+import OpenAIReasoningEffortControl, { type OpenAIReasoningEffort } from '../common/OpenAIReasoningEffortControl'
 import { ScalableIcon } from '../common/ScalableIcon'
 import Disclaimer from '../Disclaimer'
 import ProviderImageIcon from '../icons/ProviderImageIcon'
@@ -165,6 +169,7 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
     const pasteLongTextAsAFile = useSettingsStore((state) => state.pasteLongTextAsAFile)
     const shortcuts = useSettingsStore((state) => state.shortcuts)
     const widthFull = useUIStore((s) => s.widthFull) || fullWidth
+    const setGlobalSettings = useSettingsStore((state) => state.setSettings)
     const saveBlob = useSaveBlob()
 
     const currentSessionId = sessionId
@@ -280,24 +285,29 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
     )
 
     const { providers } = useProviders()
+    const selectedProviderInfo = useMemo(() => {
+      if (!model) return undefined
+      return providers.find((p) => p.id === model.provider)
+    }, [providers, model])
+
     const modelSelectorDisplayText = useMemo(() => {
       if (!model) {
         return t('Select Model')
       }
-      const providerInfo = providers.find((p) => p.id === model.provider)
 
-      const modelInfo = (providerInfo?.models || providerInfo?.defaultSettings?.models)?.find(
+      const modelInfo = (selectedProviderInfo?.models || selectedProviderInfo?.defaultSettings?.models)?.find(
         (m) => m.modelId === model.modelId
       )
       return `${modelInfo?.nickname || model.modelId}`
-    }, [providers, model, t])
+    }, [selectedProviderInfo, model, t])
 
     // Get model info for context window
     const modelInfo = useMemo(() => {
       if (!model) return null
-      const providerInfo = providers.find((p) => p.id === model.provider)
-      return (providerInfo?.models || providerInfo?.defaultSettings?.models)?.find((m) => m.modelId === model.modelId)
-    }, [providers, model])
+      return (selectedProviderInfo?.models || selectedProviderInfo?.defaultSettings?.models)?.find(
+        (m) => m.modelId === model.modelId
+      )
+    }, [selectedProviderInfo, model])
 
     // Check if model supports tool use for files
     const { data: modelSupportToolUseForFile = false } = useQuery({
@@ -343,6 +353,67 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
 
     const globalSettings = useSettingsStore((state) => state)
     const [isCompacting, setIsCompacting] = useState(false)
+
+    const openAIReasoningEffort = currentSessionMergedSettings?.providerOptions?.openai?.reasoningEffort
+
+    const isOpenAIReasoningModel = useMemo(() => {
+      if (!model) return false
+      const isOpenAIProvider =
+        selectedProviderInfo?.type === ModelProviderType.OpenAI ||
+        selectedProviderInfo?.type === ModelProviderType.OpenAIResponses ||
+        model.provider === ModelProviderEnum.OpenAI ||
+        model.provider === ModelProviderEnum.OpenAIResponses
+
+      return isOpenAIProvider && (modelInfo?.capabilities?.includes('reasoning') ?? true)
+    }, [model, modelInfo?.capabilities, selectedProviderInfo?.type])
+
+    const buildOpenAIProviderOptions = useCallback(
+      (providerOptions: ProviderOptions | undefined, reasoningEffort?: OpenAIReasoningEffort): ProviderOptions => {
+        const openaiOptions = { ...(providerOptions?.openai || {}) }
+        if (reasoningEffort) {
+          openaiOptions.reasoningEffort = reasoningEffort
+        } else {
+          delete openaiOptions.reasoningEffort
+        }
+
+        return {
+          ...(providerOptions || {}),
+          openai: openaiOptions,
+        }
+      },
+      []
+    )
+
+    const setOpenAIReasoningEffort = useCallback(
+      (reasoningEffort?: OpenAIReasoningEffort) => {
+        if (currentSessionId && !isNewSession && currentSession) {
+          const sessionSettings = currentSession.settings || {}
+          void chatStore
+            .updateSession(currentSessionId, {
+              settings: {
+                ...sessionSettings,
+                providerOptions: buildOpenAIProviderOptions(sessionSettings.providerOptions, reasoningEffort),
+              },
+            })
+            .catch((error) => {
+              console.error('Failed to update reasoning effort', error)
+            })
+          return
+        }
+
+        setGlobalSettings({
+          providerOptions: buildOpenAIProviderOptions(globalSettings.providerOptions, reasoningEffort),
+        })
+      },
+      [
+        buildOpenAIProviderOptions,
+        currentSession,
+        currentSessionId,
+        globalSettings.providerOptions,
+        isNewSession,
+        setGlobalSettings,
+      ]
+    )
 
     const compactionUIStateMap = useAtomValue(compactionUIStateMapAtom)
     const isCompactionRunning = useMemo(() => {
@@ -1119,6 +1190,13 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
                   </UnstyledButton>
                 </Tooltip>
 
+                <ReasoningEffortMenu
+                  value={openAIReasoningEffort}
+                  onChange={setOpenAIReasoningEffort}
+                  isApplicable={isOpenAIReasoningModel}
+                  toolbarIconSize={toolbarIconSize}
+                />
+
                 {!isSmallScreen &&
                   (showRollbackThreadButton ? (
                     <Tooltip label={t('Rollback Thread')} position="top" withArrow>
@@ -1196,6 +1274,14 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
                       >
                         {t('Conversation Settings')}
                       </Menu.Item>
+                      <Menu.Divider />
+                      <Box px="sm" py="xs" w={260}>
+                        <OpenAIReasoningEffortControl
+                          value={openAIReasoningEffort}
+                          onChange={setOpenAIReasoningEffort}
+                          labelWeight={500}
+                        />
+                      </Box>
                     </Menu.Dropdown>
                   </Menu>
                 )}
@@ -1302,6 +1388,77 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
     )
   }
 )
+
+const getReasoningEffortLabel = (value: OpenAIReasoningEffort | undefined, t: (key: string) => string) => {
+  switch (value) {
+    case 'low':
+      return t('Low')
+    case 'medium':
+      return t('Medium')
+    case 'high':
+      return t('High')
+    default:
+      return t('Disabled')
+  }
+}
+
+const ReasoningEffortMenu: React.FC<{
+  value?: OpenAIReasoningEffort
+  onChange: (value?: OpenAIReasoningEffort) => void
+  isApplicable: boolean
+  toolbarIconSize: number
+}> = ({ value, onChange, isApplicable, toolbarIconSize }) => {
+  const { t } = useTranslation()
+  const isSmallScreen = useIsSmallScreen()
+  const active = !!value
+
+  return (
+    <Menu
+      shadow="md"
+      trigger="click"
+      openDelay={100}
+      closeDelay={100}
+      keepMounted
+      position="top-start"
+      transitionProps={{
+        transition: 'pop',
+        duration: 200,
+      }}
+    >
+      <Menu.Target>
+        <UnstyledButton
+          title={t('Thinking Depth')}
+          aria-label={t('Thinking Depth')}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors"
+        >
+          <IconBulb
+            size={toolbarIconSize}
+            strokeWidth={1.8}
+            className={cn(
+              active ? 'text-[var(--chatbox-tint-brand)]' : 'text-[var(--chatbox-tint-secondary)]',
+              !isApplicable && active && 'opacity-70'
+            )}
+          />
+          {!isSmallScreen && (
+            <Text size="xs" className="whitespace-nowrap text-[var(--chatbox-tint-secondary)]">
+              {active ? getReasoningEffortLabel(value, t) : t('Thinking')}
+            </Text>
+          )}
+        </UnstyledButton>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Box p="sm" w={280}>
+          <OpenAIReasoningEffortControl value={value} onChange={onChange} labelWeight={500} />
+          {!isApplicable && (
+            <Text size="xs" c="chatbox-tertiary" mt="xs">
+              {t('Thinking Depth only works for OpenAI reasoning models')}
+            </Text>
+          )}
+        </Box>
+      </Menu.Dropdown>
+    </Menu>
+  )
+}
 
 // Reusable attachment menu component with lightweight style
 const AttachmentMenu: React.FC<{
