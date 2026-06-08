@@ -1,4 +1,4 @@
-import { app, type BrowserWindow, Menu, MenuItem, type MenuItemConstructorOptions, shell } from 'electron'
+import { app, type BrowserWindow, Menu, type MenuItemConstructorOptions, shell } from 'electron'
 import Locale from './locales'
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
@@ -56,17 +56,17 @@ export default class MenuBuilder {
 
   buildDarwinTemplate(): MenuItemConstructorOptions[] {
     const subMenuAbout: DarwinMenuItemConstructorOptions = {
-      label: 'Chatbox',
+      label: 'ChatPlus',
       submenu: [
         {
-          label: 'About Chatbox',
+          label: 'About ChatPlus',
           selector: 'orderFrontStandardAboutPanel:',
         },
         { type: 'separator' },
         { label: 'Services', submenu: [] },
         { type: 'separator' },
         {
-          label: 'Hide Chatbox',
+          label: 'Hide ChatPlus',
           accelerator: 'Command+H',
           selector: 'hide:',
         },

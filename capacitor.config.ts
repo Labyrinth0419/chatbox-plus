@@ -2,8 +2,8 @@ import type { CapacitorConfig } from '@capacitor/cli'
 import { KeyboardResize } from '@capacitor/keyboard'
 
 const config: CapacitorConfig = {
-  appId: 'xyz.chatboxapp.chatbox',
-  appName: 'Chatbox',
+  appId: 'io.labyrinth.chatboxplus',
+  appName: 'ChatPlus',
   webDir: 'release/app/dist/renderer',
   backgroundColor: '#ffffff',
   loggingBehavior: 'debug',

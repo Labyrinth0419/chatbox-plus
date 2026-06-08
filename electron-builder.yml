@@ -1,5 +1,5 @@
-productName: Chatbox
-appId: xyz.chatboxapp.app
+productName: ChatPlus
+appId: io.labyrinth.chatboxplus
 asar: true
 asarUnpack:
   - "**\\*.{node,dll}"
@@ -47,8 +47,7 @@ win:
         - x64
         - arm64
   verifyUpdateCodeSignature: false
-  artifactName: ${productName}-${version}-Setup.${ext}
-  sign: ./custom_win_sign.js
+  artifactName: ${productName}-${version}-${arch}-Setup.${ext}
   signingHashAlgorithms:
     - sha256
 
@@ -83,4 +82,4 @@ publish:
     bucket: chatbox
     endpoint: https://208624959c9d215edea0720162a740c1.r2.cloudflarestorage.com
     path: /releases
-    channel: ${env.UPDATE_CHANNEL}
+    channel: latest

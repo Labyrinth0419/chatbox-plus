@@ -1,4 +1,4 @@
-package xyz.chatboxapp.chatbox;
+package io.labyrinth.chatboxplus;
 
 import com.getcapacitor.BridgeActivity;
 

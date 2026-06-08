@@ -1,7 +1,7 @@
 {
-  "name": "xyz.chatboxapp.ce",
-  "productName": "xyz.chatboxapp.ce",
-  "version": "0.0.1",
+  "name": "chatplus",
+  "productName": "ChatPlus",
+  "version": "1.0.0",
   "engines": {
     "node": ">=20.0.0 <23.0.0",
     "pnpm": ">=10.17.0"
@@ -21,10 +21,12 @@
     "postinstall": "node .erb/scripts/postinstall.cjs",
     "package": "ts-node ./.erb/scripts/clean.js && pnpm run build && electron-builder build --publish never",
     "package:all": "ts-node ./.erb/scripts/clean.js && pnpm run build && electron-builder build --publish never --win --mac --linux",
-    "release:web": "bash release-web.sh",
-    "release:mac": "bash release-mac.sh",
-    "release:linux": "bash release-linux.sh",
-    "release:win": "bash release-win.sh",
+    "release:web": "pnpm run build:web",
+    "release:mac": "pnpm run build && electron-builder build --publish never --mac",
+    "release:linux": "pnpm run build && electron-builder build --publish never --linux",
+    "release:win": "pnpm run build && electron-builder build --publish never --win",
+    "release:android:apk": "pnpm run mobile:sync:android && cd android && gradlew.bat assembleRelease",
+    "release:android:aab": "pnpm run mobile:sync:android && cd android && gradlew.bat bundleRelease",
     "electron:publish-mac": "pnpm run build && electron-builder build --publish always --mac",
     "electron:publish-linux": "pnpm run build && electron-builder build --publish always --linux",
     "electron:publish-win": "pnpm run build && electron-builder build --publish always --win",

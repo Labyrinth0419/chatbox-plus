@@ -107,7 +107,8 @@ export function switchCurrentSession(sessionId: string) {
   const store = getDefaultStore()
   store.set(atoms.currentSessionIdAtom, sessionId)
   router.navigate({
-    to: `/session/${sessionId}`,
+    to: '/session/$sessionId',
+    params: { sessionId },
   })
   scrollActions.clearAutoScroll()
 }
@@ -116,7 +117,6 @@ export function switchCurrentSession(sessionId: string) {
  * Reorder sessions in the list
  */
 export async function reorderSessions(oldIndex: number, newIndex: number) {
-  console.debug('sessionActions', 'reorderSessions', oldIndex, newIndex)
   await chatStore.updateSessionList((sessions) => {
     if (!sessions) {
       throw new Error('Session list not found')
