@@ -61,4 +61,50 @@ describe('convertToModelMessages', () => {
       )
     ).rejects.toThrow('Failed to read attached image')
   })
+
+  it('drops assistant reasoning parts by default', async () => {
+    const messages = await convertToModelMessages([
+      {
+        id: 'msg-1',
+        role: 'assistant',
+        contentParts: [
+          { type: 'reasoning', text: 'private chain of thought' },
+          { type: 'text', text: 'final answer' },
+        ],
+      },
+    ])
+
+    expect(messages).toEqual([
+      {
+        role: 'assistant',
+        content: [{ type: 'text', text: 'final answer' }],
+      },
+    ])
+  })
+
+  it('preserves assistant reasoning parts when explicitly enabled', async () => {
+    const messages = await convertToModelMessages(
+      [
+        {
+          id: 'msg-1',
+          role: 'assistant',
+          contentParts: [
+            { type: 'reasoning', text: 'deepseek thinking' },
+            { type: 'text', text: 'final answer' },
+          ],
+        },
+      ],
+      { preserveReasoning: true }
+    )
+
+    expect(messages).toEqual([
+      {
+        role: 'assistant',
+        content: [
+          { type: 'reasoning', text: 'deepseek thinking' },
+          { type: 'text', text: 'final answer' },
+        ],
+      },
+    ])
+  })
 })

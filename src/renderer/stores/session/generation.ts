@@ -221,6 +221,7 @@ export async function generate(
           providerOptions: settings.providerOptions,
           knowledgeBase,
           webBrowsing,
+          preserveReasoning: settings.provider === ModelProviderEnum.DeepSeek,
         })
         targetMsg = {
           ...targetMsg,

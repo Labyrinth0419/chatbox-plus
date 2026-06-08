@@ -57,7 +57,7 @@ async function handleSearchResult(
   coreMessages: ModelMessage[],
   controller: AbortController,
   onResultChange: OnResultChange,
-  params: { providerOptions?: ProviderOptions; onStatusChange?: OnStatusChange }
+  params: { providerOptions?: ProviderOptions; onStatusChange?: OnStatusChange; preserveReasoning?: boolean }
 ) {
   if (!result?.searchResults?.length || result.type === 'none') {
     const chatResult = await model.chat(coreMessages, {
@@ -83,18 +83,24 @@ async function handleSearchResult(
       ? constructMessagesWithKnowledgeBaseResults(messages, result.searchResults as KnowledgeBasePromptSearchResults)
       : constructMessagesWithSearchResults(messages, result.searchResults as WebPromptSearchResults)
 
-  const chatResult = await model.chat(await convertToModelMessages(messagesWithResults), {
-    signal: controller.signal,
-    onResultChange: (data) => {
-      if (data.contentParts) {
-        onResultChange({ ...data, contentParts: [toolCallPart, ...data.contentParts] })
-      } else {
-        onResultChange(data)
-      }
-    },
-    onStatusChange: params.onStatusChange,
-    providerOptions: params.providerOptions,
-  })
+  const chatResult = await model.chat(
+    await convertToModelMessages(messagesWithResults, {
+      modelSupportVision: model.isSupportVision(),
+      preserveReasoning: params.preserveReasoning,
+    }),
+    {
+      signal: controller.signal,
+      onResultChange: (data) => {
+        if (data.contentParts) {
+          onResultChange({ ...data, contentParts: [toolCallPart, ...data.contentParts] })
+        } else {
+          onResultChange(data)
+        }
+      },
+      onStatusChange: params.onStatusChange,
+      providerOptions: params.providerOptions,
+    }
+  )
   return { result: chatResult, coreMessages }
 }
 
@@ -135,6 +141,7 @@ export async function streamText(
     providerOptions?: ProviderOptions
     knowledgeBase?: Pick<KnowledgeBase, 'id' | 'name'>
     webBrowsing?: boolean
+    preserveReasoning?: boolean
   },
   signal?: AbortSignal
 ): Promise<{ result: StreamTextResult; coreMessages: ModelMessage[] }> {
@@ -224,7 +231,10 @@ export async function streamText(
       })
     }
 
-    coreMessages = await convertToModelMessages(messages, { modelSupportVision: model.isSupportVision() })
+    coreMessages = await convertToModelMessages(messages, {
+      modelSupportVision: model.isSupportVision(),
+      preserveReasoning: params.preserveReasoning,
+    })
 
     // 3. handle model not support tool use scenarios
     if (kbNotSupported || webNotSupported) {
